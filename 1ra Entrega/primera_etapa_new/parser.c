@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
 	
-	unidad_traduccion(CEOF); //ACA LLAMAR CON CEOF, BORRAR COMEN T
+	unidad_traduccion(CEOF);
 
 	match(CEOF, 9);
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 void unidad_traduccion(set folset)
 {//EL TEST DE INICIO TMB LLEVA NADA CREO MEPA, PUEDO TENER PROGRAMA VACIO, PQ SSE INVOCA DECLARACIONES CON {} Y ESTO ERA 0 o + VECES PAREC EN BNFE
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
-		declaraciones(); //ACA A DECLARACIONES LO LLAMO CON EL FOLSET DE FIRST DE UNIDAD DE TRADUCCION Y ADEMAS CON EL NADA PQ PUEDE TENER LAMBDA
+		declaraciones(folset); //ACA A DECLARACIONES LO LLAMO CON EL FOLSET DE FIRST DE UNIDAD DE TRADUCCION Y ADEMAS CON EL NADA PQ PUEDE TENER LAMBDA
 }
 
 
@@ -36,7 +36,7 @@ void declaraciones(set folset)
 }
 
 
-void especificador_tipo()
+void especificador_tipo(set folset)
 {	
 //TEST INICIO CON FIRST DEL ESP TIPO Y FOLSET CON ER 41
 	switch(lookahead())
@@ -64,7 +64,7 @@ void especificador_tipo()
 }
 
 
-void especificador_declaracion()
+void especificador_declaracion(set folset)
 {	
 	switch(lookahead())
 	{
@@ -85,7 +85,7 @@ void especificador_declaracion()
 }
 
 
-void definicion_funcion()
+void definicion_funcion(set folset)
 {
 	match(CPAR_ABR, 20);
 
@@ -98,7 +98,7 @@ void definicion_funcion()
 }
 
 
-void lista_declaraciones_param()
+void lista_declaraciones_param(set folset)
 {
 	declaracion_parametro();
 
@@ -110,7 +110,7 @@ void lista_declaraciones_param()
 }
 
 
-void declaracion_parametro() //BORRAR ESTE COMMENT, PARA EL LLAMADO AL TEST CON EL FOLSET INCLUIR CON EL [ TMB EL ] POR LAS DU, EXPPLICAR QUE ESTA POR SI PUSIERON ] Y NO [
+void declaracion_parametro(set folset) //BORRAR ESTE COMMENT, PARA EL LLAMADO AL TEST CON EL FOLSET INCLUIR CON EL [ TMB EL ] POR LAS DU, EXPPLICAR QUE ESTA POR SI PUSIERON ] Y NO [
 {
 	especificador_tipo();
 
@@ -127,7 +127,7 @@ void declaracion_parametro() //BORRAR ESTE COMMENT, PARA EL LLAMADO AL TEST CON 
 }
 
 
-void lista_declaraciones_init()
+void lista_declaraciones_init(set folset)
 {
 	match(CIDENT, 17);
 
@@ -142,7 +142,7 @@ void lista_declaraciones_init()
 }
 
 
-void declaracion_variable()
+void declaracion_variable(set folset)
 {
 	declarador_init();
 
@@ -156,7 +156,7 @@ void declaracion_variable()
 }
 
 
-void declarador_init()
+void declarador_init(set folset)
 {
 	switch(lookahead())
 	{
@@ -185,7 +185,7 @@ void declarador_init()
 }
 
 
-void lista_inicializadores()
+void lista_inicializadores(set folset)
 {
 	constante();
 
@@ -197,7 +197,7 @@ void lista_inicializadores()
 }
 
 
-void proposicion_compuesta()
+void proposicion_compuesta(set folset)
 {
 	match(CLLA_ABR, 24);
 
@@ -213,7 +213,7 @@ void proposicion_compuesta()
 }
 
 
-void lista_declaraciones()
+void lista_declaraciones(set folset)
 {
 	declaracion(); 
 
@@ -222,7 +222,7 @@ void lista_declaraciones()
 }
 
 
-void declaracion()
+void declaracion(set folset)
 {
 	especificador_tipo();
 
@@ -232,7 +232,7 @@ void declaracion()
 }
 
 
-void lista_proposiciones()
+void lista_proposiciones(set folset)
 {
 	proposicion();
 
@@ -243,7 +243,7 @@ void lista_proposiciones()
 }
 
 
-void proposicion()
+void proposicion(set folset)
 {
 	switch(lookahead())
 	{
@@ -287,7 +287,7 @@ void proposicion()
 }
 
 
-void proposicion_iteracion()
+void proposicion_iteracion(set folset)
 {
 	match(CWHILE, 27);
 
@@ -301,7 +301,7 @@ void proposicion_iteracion()
 }
 
 
-void proposicion_seleccion()
+void proposicion_seleccion(set folset)
 {
 	match(CIF, 28);
 
@@ -321,7 +321,7 @@ void proposicion_seleccion()
 }
 
 
-void proposicion_e_s()
+void proposicion_e_s(set folset)
 {
 	switch(lookahead())
 	{
@@ -365,7 +365,7 @@ void proposicion_e_s()
 }
 
 
-void proposicion_retorno()
+void proposicion_retorno(set folset)
 {
 	scanner();
 	
@@ -375,7 +375,7 @@ void proposicion_retorno()
 }
 
 
-void proposicion_expresion()
+void proposicion_expresion(set folset)
 {
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
 		expresion();
@@ -384,7 +384,7 @@ void proposicion_expresion()
 }
 
 
-void expresion()
+void expresion(set folset)
 {	
 	expresion_simple();
 
@@ -411,7 +411,7 @@ void expresion()
 }
 
 
-void expresion_simple()
+void expresion_simple(set folset)
 {
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
@@ -426,7 +426,7 @@ void expresion_simple()
 }
 
 
-void termino()
+void termino(set folset)
 {	
 	factor();
 
@@ -438,7 +438,7 @@ void termino()
 }
 
 
-void factor()
+void factor(set folset)
 {
 	switch(lookahead())
 	{
@@ -480,7 +480,7 @@ void factor()
 }
 
 
-void variable()
+void variable(set folset)
 {
 	match(CIDENT, 17);
 
@@ -497,7 +497,7 @@ void variable()
 }
 
 
-void llamada_funcion()
+void llamada_funcion(set folset)
 {
 	match(CIDENT, 17);
 	
@@ -510,7 +510,7 @@ void llamada_funcion()
 }
 
 
-void lista_expresiones()
+void lista_expresiones(set folset)
 {
 	expresion();
 
@@ -522,7 +522,7 @@ void lista_expresiones()
 }
 
 
-void constante()
+void constante(set folset)
 {
 	switch(lookahead())
 	{

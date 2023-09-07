@@ -7,3 +7,7 @@ Ver el caso de <declarador init> y en gral para ver si estoy identificando bien 
 -o-
 
 Tmb tengo algunas cosas marcadas en el IDE, eran casos de la gramatica identificando los F1, por cuando tenia >> si era > o >> el elemento
+
+-o-
+
+PREGUNTAR DONDE DIJO QUE PONGAMOS LOS FIRSTS
