@@ -1,0 +1,9 @@
+se me complica al ser BNFE y no la gramatica como antes, osea, lo que serian [] y {} son estructuras de control?
+El [] si es estructura de control, el {} tmb?
+
+Ver el caso de <declarador init> y en gral para ver si estoy identificando bien las disyunciones (!) El problema mayor lo tengo con disyunciones.
+
+
+-o-
+
+Tmb tengo algunas cosas marcadas en el IDE, eran casos de la gramatica identificando los F1, por cuando tenia >> si era > o >> el elemento

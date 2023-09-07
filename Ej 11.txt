@@ -52,55 +52,50 @@ No se incluyo ya que en los lugares donde se invoca se esta consumiendo este sim
     <proposición compuesta> ::= { <lista declaración> <lista proposición> }
     <lista declaración> ::= {λ} | <declaración> <lista declaración>
     <declaración> ::= <especificador de tipo> <resto lista decl init> ;
-    <lista proposición> ::= {λ} | <proposición> <lista proposición>
-    <proposición> ::= <proposición selección> | <proposición iteración> |
-    <proposición expresión> | <proposición compuesta> |
-    <proposición ent/sal> | <proposición retorno>
-    <proposición selección> ::= if ( <expresión> ) <proposición> <else opcional>
-    <else opcional> ::= {λ} | else <proposición>
-    <proposición iteración> ::= while ( <expresión> ) <proposición>
-    <proposición retorno> ::= return <expresión> ;
-    <proposición expresión> ::= ; | <expresión> ;
-    <proposición ent/sal> ::= cin >> <variable> <resto prop in> ; |
-    cout << <expresión> <resto prop out> ;
-    <resto prop in> ::= {λ} | >> <variable> <resto prop in>
-    <resto prop out> ::= {λ} | << <expresión> <resto prop out>
-    <expresión> ::= <expresión simple> <resto expresión>
-    <resto expresión> ::= {λ} | <op relacional> <expresión simple> <resto expresión>
-     | = <expresión simple> <resto expresión>
-    <op relacional> ::= = | != | == | < | <= | >= | >
-    <expresión simple> ::= <operador opcional> <término> <resto expresión simple>
-    <operador opcional> ::= {λ} | + | -
-    <resto expresión simple> ::= {λ} | <operador> <término> <resto expresión simple>
-    <operador> ::= + | - | ||
-    <término> ::= <factor> <resto término>
-    <resto término> ::= {λ} | <opermul> <factor> <resto término>
-    <opermul> ::= * | / | &&
-    <factor> ::= <variable> |
-    <constante> |
-    ! <expresión> |
-    ( <expresión> ) |
-    <invocación función> |
-    <cte-string>
-    <variable> ::= <ident> <resto opcional>
-    <resto opcional> ::= {λ} | [ <expresión> ]
-    <invocación función> ::= <ident> ( <lista expresiones> )
-    <lista expresiones> ::= {λ} | <expresión> <resto lista expr>
-    <resto lista expr> ::= {λ, ,}
-    <constante> ::= {0|1|…|9} U {‘}
-    <cte-num> ::= {0|1|…|9}
-    <resto cte opcional> ::= {λ, .}
-    <número> ::= {0|1|…|9}
-    <resto número> ::= {λ} U {0|1|…|9}
+    <lista proposición> ::= {λ} | F1(<proposición>) U(Si F1proposicion tiene lambda) <lista proposición>
+    <proposición> ::= {if} U {while} U {;} U F1(<expresión>) | U <proposición compuesta> | U {cin,cout} U {return}
+    <proposición selección> ::= {if}
+    <else opcional> ::= {λ,else}
+    <proposición iteración> ::= {while}
+    <proposición retorno> ::= {return}
+    <proposición expresión> ::= {;} U F1(<expresión>)
+    <proposición ent/sal> ::= {cin,cout}
+    <resto prop in> ::= {λ,>>}
+    <resto prop out> ::= {λ,<<}
+
+    //                          F1(<expresión simple>)              U       F1(<resto expresión>)
+    <expresión> ::= {λ,+,-} U {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“} U {λ} U {=,!=,==,<,<=,>=,>} U {=}
+    <resto expresión> ::= {λ} U {=,!=,==,<,<=,>=,>} U {=}
+    <op relacional> ::= {=,!=,==,<,<=,>=,>}
+    <expresión simple> ::= {λ,+,-} U {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“}
+    <operador opcional> ::= {λ,+,-}
+    <resto expresión simple> ::= {λ} U {+,-,|}
+    <operador> ::= {+,-,|}
+    <término> ::= {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“}
+    <resto término> ::= {λ} U {*,/,&&} //VER PREGUNTA ABAJO, es F1(opermul)
+    <opermul> ::= {*,/,&&} //&& es un no-terminal solo o son: & & (dos)? PREGUNTAR
+    <factor> ::= {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“}
+    <variable> ::= {a…z,A…Z}
+    <resto opcional> ::= {λ,[}
+    <invocación función> ::= {a…z,A…Z}
+    <lista expresiones> ::= {λ} U F1(<expresión>) <resto lista expr>
+    <resto lista expr> ::= {λ,,}
+    <constante> ::= {0…9} U {‘}
+    <cte-num> ::= {0…9}
+    <resto cte opcional> ::= {λ,.}
+    <número> ::= {0…9}
+    <resto número> ::= {λ} U {0…9}
     <cte-char> ::= {‘}
     <cte-string> ::= {“}
-    <cadena> ::= {λ} U {* | ¿ | ^ | …} U {a|…|z|A|…|Z} U {0|1|…|9}
-    <dígito> ::= {0|1|…|9}
-    <ascii> ::= {* | ¿ | ^ | …} U {a|…|z|A|…|Z} U {0|1|…|9}
-    <ident> ::= {a|…|z|A|…|Z}
-    <resto ident> ::= {λ} U {a|…|z|A|…|Z} U {0|1|…|9}
-    <letra> ::= {a|…|z|A|…|Z}
+    <cadena> ::= {λ} U {*,¿,^,…} U {a…z,A…Z} U {0…9}
+    <dígito> ::= {0…9}
+    <ascii> ::= {*,¿,^,…} U {a…z,A…Z} U {0…9}
+    <ident> ::= {a…z,A…Z}
+    <resto ident> ::= {λ} U {a…z,A…Z} U {0…9}
+    <letra> ::= {a…z,A…Z}
 
-6) 
+6)
+
+
 
 
