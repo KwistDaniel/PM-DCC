@@ -1,8 +1,105 @@
+1. Examine la gramática en BNFE provista por la cátedra para el sublenguaje C++ para el cual desarrollaremos el compilador.
+2. Analice el código de parser.c y asocie cada función del PDR en este archivo con su correspondiente
+símbolo no terminal de la gramática en BNFE. ¿Todas las producciones están especificadas en el parser? ¿Por qué?
+3. Observe los carteles de errores en error.c y reemplace los error handler(10) parser.c, por su
+correspondiente número de error.
+4. Compare las gramáticas en BNF y BNFE provistas por la cátedra para nuestro sublenguaje C++.
+5. Obtenga el conjunto FIRST1 de cada símbolo no terminal de la gramática en BNF.
+6. Establezca qué procedimientos llevan un test inicial y cuáles un test al final.
+7. Agregue el parámetro folset a los procedimientos reconocedores (asociados a los símbolos no terminales).
+8. Pase el folset adecuado en las invocaciones a los procedimientos.
+9. Analice qué deberían llevar los parámetros c1, c2 y ne (el número de error que corresponda) y agregue
+los test al código.
+10. Adapte el esquema de recuperación de errores antipánico obtenido para la gramática en BNF, en la
+versión en BNFE.
+11. Confeccione un lote de prueba sencillo sin errores y realiace el análisis sintáctico del mismo.
+12. Confeccione un lote de prueba con un único error y realice el análisis sintáctico del mismo y observe
+cómo se comporta el esquema de recuperación de errores realizado.
+13. Analice la gramática, y confeccione lotes de prueba con errores y vea hasta dónde ayuda el esquema
+de recuperación para reconfigurarse exitosamente.
+14. Trate la recuperación en los procedimientos donde existan iteraciones cuyas condiciones contengan
+símbolos considerados fáciles de olvidar, como por ejemplo la ‘,’.
+15. Identifique casos en los que el esquema no haya sido suficiente y Ud. crea que es necesario reconfigurarse.
+16. Realice los cambios en el código para reflejar las determinaciones tomadas en el ítem anterior
+
+1) -.
 2) FALTA:
 <relación> ::= != | == | < | <= | >= | >
 No se incluyo ya que en los lugares donde se invoca se esta consumiendo este simbolo: EX: Expresion() (Igual es el unico lugar donde se usa relacion, en expresion). Se pudo definir para no tener que incluir todas las opc en expresion y tenerlas aparte
-
-5) 
+3) -.
+4) -.
+5)
+    First(1): λ
+    <unidad traducción> ::=
+    <declaraciones> ::=
+    <especificador de tipo> ::=
+    <especificador declaración> ::=
+    <definición de función> ::=
+    <lista decl parámetros> ::= {λ} | <declaración parámetros> <resto lista decl par>
+    <resto lista decl par> ::= {λ} | , <declaración parámetros> <resto lista decl par>
+    <declaración parámetros> ::= <especificador de tipo> <oprefopcional> <ident> <arregloopcional>
+    <oprefopcional> ::= {λ, &}
+    <arregloopcional> ::= {λ,[}
+    <declaración de variable> ::= <declarador init> <lista decl init> ;
+    <lista decl init> ::= {λ} | , <resto lista decl init>
+    <resto lista decl init> ::= <ident> <declarador init> <lista decl init>
+    <declarador init> ::= {λ} | = <opción de constante>
+    <opción de constante> ::= <constante> | [ <límite opcional > ] <lista opcional>
+    <límite opcional> ::= {λ} | <constante>
+    <lista opcional> ::= {λ} | = { <lista inicializadores> }
+    <lista inicializadores> ::= <constante> <resto lista inic>
+    <resto lista inic> ::= {λ} | , <constante> <resto lista inic>
+    <proposición compuesta> ::= { <lista declaración> <lista proposición> }
+    <lista declaración> ::= {λ} | <declaración> <lista declaración>
+    <declaración> ::= <especificador de tipo> <resto lista decl init> ;
+    <lista proposición> ::= {λ} | <proposición> <lista proposición>
+    <proposición> ::= <proposición selección> | <proposición iteración> |
+    <proposición expresión> | <proposición compuesta> |
+    <proposición ent/sal> | <proposición retorno>
+    <proposición selección> ::= if ( <expresión> ) <proposición> <else opcional>
+    <else opcional> ::= {λ} | else <proposición>
+    <proposición iteración> ::= while ( <expresión> ) <proposición>
+    <proposición retorno> ::= return <expresión> ;
+    <proposición expresión> ::= ; | <expresión> ;
+    <proposición ent/sal> ::= cin >> <variable> <resto prop in> ; |
+    cout << <expresión> <resto prop out> ;
+    <resto prop in> ::= {λ} | >> <variable> <resto prop in>
+    <resto prop out> ::= {λ} | << <expresión> <resto prop out>
+    <expresión> ::= <expresión simple> <resto expresión>
+    <resto expresión> ::= {λ} | <op relacional> <expresión simple> <resto expresión>
+     | = <expresión simple> <resto expresión>
+    <op relacional> ::= = | != | == | < | <= | >= | >
+    <expresión simple> ::= <operador opcional> <término> <resto expresión simple>
+    <operador opcional> ::= {λ} | + | -
+    <resto expresión simple> ::= {λ} | <operador> <término> <resto expresión simple>
+    <operador> ::= + | - | ||
+    <término> ::= <factor> <resto término>
+    <resto término> ::= {λ} | <opermul> <factor> <resto término>
+    <opermul> ::= * | / | &&
+    <factor> ::= <variable> |
+    <constante> |
+    ! <expresión> |
+    ( <expresión> ) |
+    <invocación función> |
+    <cte-string>
+    <variable> ::= <ident> <resto opcional>
+    <resto opcional> ::= {λ} | [ <expresión> ]
+    <invocación función> ::= <ident> ( <lista expresiones> )
+    <lista expresiones> ::= {λ} | <expresión> <resto lista expr>
+    <resto lista expr> ::= {λ, ,}
+    <constante> ::= {0|1|…|9} U {‘}
+    <cte-num> ::= {0|1|…|9}
+    <resto cte opcional> ::= {λ, .}
+    <número> ::= {0|1|…|9}
+    <resto número> ::= {λ} U {0|1|…|9}
+    <cte-char> ::= {‘}
+    <cte-string> ::= {“}
+    <cadena> ::= {λ} U {* | ¿ | ^ | …} U {a|…|z|A|…|Z} U {0|1|…|9}
+    <dígito> ::= {0|1|…|9}
+    <ascii> ::= {* | ¿ | ^ | …} U {a|…|z|A|…|Z} U {0|1|…|9}
+    <ident> ::= {a|…|z|A|…|Z}
+    <resto ident> ::= {λ} U {a|…|z|A|…|Z} U {0|1|…|9}
+    <letra> ::= {a|…|z|A|…|Z}
 
 6) 
 
