@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
-
+	
 	unidad_traduccion(CEOF); //ACA LLAMAR CON CEOF, BORRAR COMEN T
 
 	match(CEOF, 9);
@@ -19,25 +19,26 @@ int main(int argc, char *argv[])
 
 /********* funciones del parser ***********/
 
-void unidad_traduccion()
-{
+void unidad_traduccion(set folset)
+{//EL TEST DE INICIO TMB LLEVA NADA CREO MEPA, PUEDO TENER PROGRAMA VACIO, PQ SSE INVOCA DECLARACIONES CON {} Y ESTO ERA 0 o + VECES PAREC EN BNFE
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
-		declaraciones();
+		declaraciones(); //ACA A DECLARACIONES LO LLAMO CON EL FOLSET DE FIRST DE UNIDAD DE TRADUCCION Y ADEMAS CON EL NADA PQ PUEDE TENER LAMBDA
 }
 
 
-void declaraciones()
+void declaraciones(set folset)
 {	
-	especificador_tipo();
+	especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION);
 	
 	match(CIDENT, 17);
 	
-	especificador_declaracion();
+	especificador_declaracion(folset);
 }
 
 
 void especificador_tipo()
 {	
+//TEST INICIO CON FIRST DEL ESP TIPO Y FOLSET CON ER 41
 	switch(lookahead())
 	{
 		case CVOID:
@@ -57,8 +58,9 @@ void especificador_tipo()
 			break;
 			
 		default:
-			error_handler(41);
+			error_handler(18);
 	}
+//ACA TEST FINAL CON SOLO FOLSET, NADA (que seria un conjunto vacio) Y ERR 42
 }
 
 
@@ -108,7 +110,7 @@ void lista_declaraciones_param()
 }
 
 
-void declaracion_parametro()
+void declaracion_parametro() //BORRAR ESTE COMMENT, PARA EL LLAMADO AL TEST CON EL FOLSET INCLUIR CON EL [ TMB EL ] POR LAS DU, EXPPLICAR QUE ESTA POR SI PUSIERON ] Y NO [
 {
 	especificador_tipo();
 
