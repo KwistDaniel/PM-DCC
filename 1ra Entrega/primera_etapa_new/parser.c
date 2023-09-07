@@ -4,8 +4,8 @@
 int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
-	
-	unidad_traduccion();
+
+	unidad_traduccion(CEOF); //ACA LLAMAR CON CEOF, BORRAR COMEN T
 
 	match(CEOF, 9);
 
