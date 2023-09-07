@@ -1,0 +1,9 @@
+2) FALTA:
+<relación> ::= != | == | < | <= | >= | >
+No se incluyo ya que en los lugares donde se invoca se esta consumiendo este simbolo: EX: Expresion() (Igual es el unico lugar donde se usa relacion, en expresion). Se pudo definir para no tener que incluir todas las opc en expresion y tenerlas aparte
+
+5) 
+
+6) 
+
+
