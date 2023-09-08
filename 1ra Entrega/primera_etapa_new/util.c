@@ -79,3 +79,65 @@ set lookahead_in(set conjunto)
 {
 	return lookahead() & conjunto;
 }
+
+
+
+enum procedimientos {
+	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
+	DEFINICION_FUNCION, LISTA_DECLARACION_PARAM, DECLARACION_PARAMETRO, DECLARACION_VARIABLE,
+	LISTA_DECLARACIONES_INIT, DECLARADOR_INIT, LISTA_INICIALIZADORES, PROPOSICION_COMPUESTA,
+	LISTA_DECLARACIONES, DECLARACION, LISTA_PROPOSICIONES, PROPOSICION, PROPOSICION_ITERACION,
+	PROPOSICION_SELECCION, PROPOSICION_E_S, PROPOSICION_RETORNO, PROPOSICION_EXPRESION, EXPRESION,
+	EXPRESION_SIMPLE, TERMINO, FACTOR, VARIABLE, LLAMADA_FUNCION, LISTA_EXPRESIONES, CONSTANTE
+};
+//Capaz tmb necesite ponerlo en parser.c
+
+
+set first(int noterminal)
+{
+	switch(noterminal)
+	{
+		case UNIDAD_TRADUCCION:		
+		case DECLARACIONES:
+		case LISTA_DECLARACION_PARAM:
+		case DECLARACION_PARAMETRO:
+		case DECLARACION:
+		case LISTA_DECLARACIONES:
+		case ESPECIFICADOR_TIPO: 			return(CVOID | CCHAR | CINT | CFLOAT);
+		case ESPECIFICADOR_DECLARACION:
+		case DEFINICION_FUNCION: 		
+		case DECLARACION_VARIABLE: 		
+		case VARIABLE:
+		case LLAMADA_FUNCION:
+		case LISTA_DECLARACIONES_INIT: 	
+		case DECLARADOR_INIT: 			
+		case LISTA_INICIALIZADORES: 	
+		case PROPOSICION_COMPUESTA: 
+		case LISTA_PROPOSICIONES:
+		case PROPOSICION: 					
+		case PROPOSICION_ITERACION:
+		case PROPOSICION_SELECCION: 	
+		case PROPOSICION_E_S: 			
+		case PROPOSICION_RETORNO: 		
+		case PROPOSICION_EXPRESION: 	
+		case EXPRESION:
+		case LISTA_EXPRESIONES:
+		case EXPRESION_SIMPLE: 			
+		case TERMINO: 
+		case FACTOR: 					
+		case CONSTANTE: 				
+		default: 								error_handler(39); // case 39: printf("\t Error %d: En FIRST\n", ne); break;
+	}
+}
+
+
+void test(set cjto1, set cjto2, int ne)
+{
+	if(!lookahead_in(cjto1))
+	{
+		error_handler(ne);
+		cjto1 = cjto1 | cjto2;
+		while(!lookahead_in(cjto1))
+			scanner();
+	}
+}

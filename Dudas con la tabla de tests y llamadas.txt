@@ -1,13 +1,24 @@
-se me complica al ser BNFE y no la gramatica como antes, osea, lo que serian [] y {} son estructuras de control?
-El [] si es estructura de control, el {} tmb?
-
-Ver el caso de <declarador init> y en gral para ver si estoy identificando bien las disyunciones (!) El problema mayor lo tengo con disyunciones.
+Ubicacio de FIRSTS: Estan en utils
 
 
--o-
 
-Tmb tengo algunas cosas marcadas en el IDE, eran casos de la gramatica identificando los F1, por cuando tenia >> si era > o >> el elemento
+
 
 -o-
 
-PREGUNTAR DONDE DIJO QUE PONGAMOS LOS FIRSTS
+
+enum procedimientos {
+	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
+	DEFINICION_FUNCION, LISTA_DECLARACION_PARAM, DECLARACION_PARAMETRO, DECLARACION_VARIABLE,
+	LISTA_DECLARACIONES_INIT, DECLARADOR_INIT, LISTA_INICIALIZADORES, PROPOSICION_COMPUESTA,
+	LISTA_DECLARACIONES, DECLARACION, LISTA_PROPOSICIONES, PROPOSICION, PROPOSICION_ITERACION,
+	PROPOSICION_SELECCION, PROPOSICION_E_S, PROPOSICION_RETORNO, PROPOSICION_EXPRESION, EXPRESION,
+	EXPRESION_SIMPLE, TERMINO, FACTOR, VARIABLE, LLAMADA_FUNCION, LISTA_EXPRESIONES, CONSTANTE
+};
+//Capaz tmb necesite ponerlo en parser.c
+
+
+
+Subirlo en un .zip
+Adjuntar lotes con y sin errores para mostrar
+Terminar todo hasta tests

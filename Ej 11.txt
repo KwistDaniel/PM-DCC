@@ -25,7 +25,7 @@ símbolos considerados fáciles de olvidar, como por ejemplo la ‘,’.
 1) -.
 2) FALTA:
 <relación> ::= != | == | < | <= | >= | >
-No se incluyo ya que en los lugares donde se invoca se esta consumiendo este simbolo: EX: Expresion() (Igual es el unico lugar donde se usa relacion, en expresion). Se pudo definir para no tener que incluir todas las opc en expresion y tenerlas aparte
+No se incluyo ya que en los lugares donde se invoca se esta consumiendo este simbolo: EX: Expresion() (Igual es el unico lugar donde se usa relacion, en expresion). //El analizador lexic ya te da la unidad lexica y el parser hace el match //!=Se pudo definir para no tener que incluir todas las opc en expresion y tenerlas aparte
 3) -.
 4) -.
 5)
@@ -49,11 +49,11 @@ No se incluyo ya que en los lugares donde se invoca se esta consumiendo este sim
     <lista opcional> ::= {λ} | = { <lista inicializadores> }
     <lista inicializadores> ::= <constante> <resto lista inic>
     <resto lista inic> ::= {λ} | , <constante> <resto lista inic>
-    <proposición compuesta> ::= { <lista declaración> <lista proposición> }
+    <proposición compuesta> ::= {{}
     <lista declaración> ::= {λ} | <declaración> <lista declaración>
     <declaración> ::= <especificador de tipo> <resto lista decl init> ;
     <lista proposición> ::= {λ} | F1(<proposición>) U(Si F1proposicion tiene lambda) <lista proposición>
-    <proposición> ::= {if} U {while} U {;} U F1(<expresión>) | U <proposición compuesta> | U {cin,cout} U {return}
+    <proposición> ::= {if} U {while} U {;} U F1(<expresión>) U {{} U {cin,cout} U {return}
     <proposición selección> ::= {if}
     <else opcional> ::= {λ,else}
     <proposición iteración> ::= {while}
@@ -72,8 +72,8 @@ No se incluyo ya que en los lugares donde se invoca se esta consumiendo este sim
     <resto expresión simple> ::= {λ} U {+,-,|}
     <operador> ::= {+,-,|}
     <término> ::= {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“}
-    <resto término> ::= {λ} U {*,/,&&} //VER PREGUNTA ABAJO, es F1(opermul)
-    <opermul> ::= {*,/,&&} //&& es un no-terminal solo o son: & & (dos)? PREGUNTAR
+    <resto término> ::= {λ} U {*,/,&&} 
+    <opermul> ::= {*,/,&&} 
     <factor> ::= {!,(} U {a…z,A…Z} U {0…9} U {‘} U {“}
     <variable> ::= {a…z,A…Z}
     <resto opcional> ::= {λ,[}

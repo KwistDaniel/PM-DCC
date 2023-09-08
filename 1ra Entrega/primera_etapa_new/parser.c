@@ -28,7 +28,7 @@ void unidad_traduccion(set folset)
 
 void declaraciones(set folset)
 {	
-	especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION);
+	especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION));
 	
 	match(CIDENT, 17);
 	
@@ -39,6 +39,7 @@ void declaraciones(set folset)
 void especificador_tipo(set folset)
 {	
 //TEST INICIO CON FIRST DEL ESP TIPO Y FOLSET CON ER 41
+	test(first(ESPECIFICADOR_TIPO), folset, 41);
 	switch(lookahead())
 	{
 		case CVOID:
