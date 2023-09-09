@@ -20,9 +20,9 @@
 #define CWHILE			(UNO << 12)		/* 4096 */
 #define CPAR_ABR		(UNO << 13)		/* 8192 */
 #define CPAR_CIE		(UNO << 14)		/* ... */
-#define CIF			(UNO << 15)
+#define CIF			    (UNO << 15)
 #define CELSE			(UNO << 16)
-#define CIN			(UNO << 17)
+#define CIN			    (UNO << 17)
 #define COUT			(UNO << 18)
 #define CSHL			(UNO << 19)		/* << */
 #define CSHR			(UNO << 20)		/* >> */
@@ -34,7 +34,7 @@
 #define CMAIG			(UNO << 26)
 #define CMAS			(UNO << 27)
 #define CMENOS			(UNO << 28)
-#define COR			(UNO << 29)
+#define COR			    (UNO << 29)
 #define CMULT			(UNO << 30)
 #define CDIV			(UNO << 31)
 #define CAND			(UNO << 32)

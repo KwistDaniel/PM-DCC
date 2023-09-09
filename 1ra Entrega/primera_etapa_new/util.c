@@ -97,35 +97,35 @@ set first(int noterminal)
 {
 	switch(noterminal)
 	{
-		case UNIDAD_TRADUCCION:		
-		case DECLARACIONES:
-		case LISTA_DECLARACION_PARAM:
-		case DECLARACION_PARAMETRO:
-		case DECLARACION:
-		case LISTA_DECLARACIONES:
-		case ESPECIFICADOR_TIPO: 			return(CVOID | CCHAR | CINT | CFLOAT);
-		case ESPECIFICADOR_DECLARACION:
-		case DEFINICION_FUNCION: 		
-		case DECLARACION_VARIABLE: 		
-		case VARIABLE:
-		case LLAMADA_FUNCION:
-		case LISTA_DECLARACIONES_INIT: 	
-		case DECLARADOR_INIT: 			
-		case LISTA_INICIALIZADORES: 	
-		case PROPOSICION_COMPUESTA: 
-		case LISTA_PROPOSICIONES:
-		case PROPOSICION: 					
-		case PROPOSICION_ITERACION:
-		case PROPOSICION_SELECCION: 	
-		case PROPOSICION_E_S: 			
-		case PROPOSICION_RETORNO: 		
-		case PROPOSICION_EXPRESION: 	
-		case EXPRESION:
-		case LISTA_EXPRESIONES:
-		case EXPRESION_SIMPLE: 			
-		case TERMINO: 
-		case FACTOR: 					
-		case CONSTANTE: 				
+		case UNIDAD_TRADUCCION:		            return(CVOID | CCHAR | CINT | CFLOAT | NADA);
+		case DECLARACIONES:                     return(CVOID | CCHAR | CINT | CFLOAT);
+		case LISTA_DECLARACION_PARAM:           return(CVOID | CCHAR | CINT | CFLOAT);
+		case DECLARACION_PARAMETRO:             return(CVOID | CCHAR | CINT | CFLOAT);
+		case DECLARACION:                       return(CVOID | CCHAR | CINT | CFLOAT);
+		case LISTA_DECLARACIONES:               return(CVOID | CCHAR | CINT | CFLOAT);
+		case ESPECIFICADOR_TIPO: 			    return(CVOID | CCHAR | CINT | CFLOAT);
+		case ESPECIFICADOR_DECLARACION:         return(CPAR_ABR | CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA);
+		case DEFINICION_FUNCION: 		        return(CPAR_ABR);
+		case DECLARACION_VARIABLE: 		        return(CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA);
+		case VARIABLE:                          return(CIDENT);
+		case LLAMADA_FUNCION:                   return(CIDENT);
+		case LISTA_DECLARACIONES_INIT: 	        return(CIDENT);
+		case DECLARADOR_INIT: 			        return(NADA | CASIGNAC | CCOR_ABR);
+		case LISTA_INICIALIZADORES: 	        return(CCONS_ENT | CCONS_FLO | CCONS_CAR);
+		case PROPOSICION_COMPUESTA:             return(CLLA_ABR);
+		case LISTA_PROPOSICIONES:               return(CLLA_ABR);
+		case PROPOSICION: 					    return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR | CPYCOMA | CLLA_ABR | CWHILE | CIF | CRETURN | CIN | COUT);
+		case PROPOSICION_ITERACION:             return(CWHILE);
+		case PROPOSICION_SELECCION: 	        return(CIF);
+		case PROPOSICION_E_S: 			        return(CIN | COUT);
+		case PROPOSICION_RETORNO: 		        return(CRETURN);
+		case PROPOSICION_EXPRESION: 	        return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR | CPYCOMA);
+		case EXPRESION:                         return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		case LISTA_EXPRESIONES:                 return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		case EXPRESION_SIMPLE: 			        return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		case TERMINO:                           return(CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		case FACTOR: 					        return(CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		case CONSTANTE: 				        return(CCONS_ENT | CCONS_FLO | CCONS_CAR);
 		default: 								error_handler(39); // case 39: printf("\t Error %d: En FIRST\n", ne); break;
 	}
 }

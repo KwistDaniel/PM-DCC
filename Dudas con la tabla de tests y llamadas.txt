@@ -1,5 +1,6 @@
 Ubicacio de FIRSTS: Estan en utils
-
+Dudas 9/9 en adelante:
+El codigo del lambda, es NADA????
 
 
 
