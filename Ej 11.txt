@@ -94,7 +94,10 @@ No se incluyo ya que en los lugares donde se invoca se esta consumiendo este sim
     <resto ident> ::= {λ} U {a…z,A…Z} U {0…9}
     <letra> ::= {a…z,A…Z}
 
-6)
+6) -.
+7) -.
+8) folsets correctos
+9) paremetros de los tests FALTAN LOS CODIGOS DE ERRORES
 
 
 
