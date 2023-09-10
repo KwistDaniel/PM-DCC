@@ -208,28 +208,28 @@ void declarador_init(set folset)
 
 void lista_inicializadores(set folset)
 {
-	constante();
+	constante(folset | CCOMA | first(CONSTANTE));
 
 	while(lookahead_in(CCOMA))
 	{
 		scanner();
-		constante();
+		constante(folset);
 	}
 }
 
 
 void proposicion_compuesta(set folset)
 {
-	test(,,);
+	test(first(PROPOSICION_COMPUESTA),folset | first(LISTA_DECLARACIONES) | first(LISTA_PROPOSICIONES) | CLLA_CIE,);
 	match(CLLA_ABR, 24);
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
-		lista_declaraciones();
+		lista_declaraciones(folset | first(LISTA_PROPOSICIONES));
 
 	if(lookahead_in(CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 						 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
 						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN))
-		lista_proposiciones();
+		lista_proposiciones(folset);
 
 	match(CLLA_CIE, 25);
 	test(,,);
@@ -238,16 +238,16 @@ void proposicion_compuesta(set folset)
 
 void lista_declaraciones(set folset)
 {
-	declaracion(); 
+	declaracion(folset | first(DECLARACION));
 
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
-		declaracion(); 
+		declaracion(folset);
 }
 
 
 void declaracion(set folset)
 {
-	especificador_tipo();
+	especificador_tipo(folset | first(LISTA_DECLARACIONES_INIT) | CPYCOMA);
 
 	lista_declaraciones_init();
 
@@ -258,35 +258,35 @@ void declaracion(set folset)
 
 void lista_proposiciones(set folset)
 {
-	proposicion();
+	proposicion(folset | first(PROPOSICION));
 
 	while(lookahead_in(CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
 							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN))
-		proposicion();
+		proposicion(folset);
 }
 
 
 void proposicion(set folset)
 {
-	test(,,);
+	test(first(PROPOSICION),folset | first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S),);
 	switch(lookahead())
 	{
 		case CLLA_ABR:
-			proposicion_compuesta();
+			proposicion_compuesta(folset);
 			break;
 		
 		case CWHILE:
-			proposicion_iteracion();
+			proposicion_iteracion(folset);
 			break;
-		
+
 		case CIF:
-			proposicion_seleccion();
+			proposicion_seleccion(folset);
 			break;
-		
+
 		case CIN:
 		case COUT:
-			proposicion_e_s();
+			proposicion_e_s(folset);
 			break;
 		
 		case CMAS:
@@ -299,11 +299,11 @@ void proposicion(set folset)
 		case CCONS_CAR:
 		case CCONS_STR:
 		case CPYCOMA:
-			proposicion_expresion();
+			proposicion_expresion(folset);
 			break;
 		
 		case CRETURN:
-			proposicion_retorno();
+			proposicion_retorno(folset);
 			break;
 		
 		default:
@@ -318,11 +318,11 @@ void proposicion_iteracion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	expresion();
+	expresion(folset | CPAR_CIE);
 
 	match(CPAR_CIE, 21);
 
-	proposicion();
+	proposicion(folset);
 }
 
 
@@ -332,16 +332,16 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	expresion();
+	expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE);
 
 	match(CPAR_CIE, 21);
 
-	proposicion();
+	proposicion(folset | CELSE | first(PROPOSICION));
 
 	if(lookahead_in(CELSE))
 	{
 		scanner();
-		proposicion();
+		proposicion(folset);
 	}
 }
 
@@ -355,12 +355,12 @@ void proposicion_e_s(set folset)
 			
 			match(CSHR, 30);
 			
-			variable();
+			variable(folset | CSHR | first(VARIABLE) | CPYCOMA);
 			
 			while(lookahead_in(CSHR))
 			{
 				scanner();
-				variable();
+				variable(folset | CPYCOMA);
 			}
 
 			match(CPYCOMA, 23);
@@ -372,12 +372,12 @@ void proposicion_e_s(set folset)
 
 			match(CSHL, 31);
 			
-			expresion();
+			expresion(folset | CSHL | first(EXPRESION) | CPYCOMA);
 
 			while(lookahead_in(CSHL))
 			{
 				scanner();
-				expresion();
+				expresion(folset | CPYCOMA);
 			}
 
 			match(CPYCOMA, 23);
@@ -395,7 +395,7 @@ void proposicion_retorno(set folset)
 {
 	scanner();
 	
-	expresion();
+	expresion(folset | CPYCOMA);
 	
 	match(CPYCOMA, 23);
 	test(,,);
@@ -405,7 +405,7 @@ void proposicion_retorno(set folset)
 void proposicion_expresion(set folset)
 {
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
-		expresion();
+		expresion(folset | CPYCOMA);
 
 	match(CPYCOMA, 23);
 	test(,,);
@@ -414,7 +414,7 @@ void proposicion_expresion(set folset)
 
 void expresion(set folset)
 {	
-	expresion_simple();
+	expresion_simple(folset | CASIGNAC | first(EXPRESION_SIMPLE) | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
 
 	while(lookahead_in(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG))
 	{
@@ -422,7 +422,7 @@ void expresion(set folset)
 		{
 			case CASIGNAC:
 				scanner();
-				expresion_simple();
+				expresion_simple(folset);
 				break;
 				
 			case CDISTINTO:
@@ -432,7 +432,7 @@ void expresion(set folset)
 			case CMAYOR:
 			case CMAIG:
 				scanner();
-				expresion_simple();
+				expresion_simple(folset);
 				break;
 		}
 	}
@@ -441,43 +441,43 @@ void expresion(set folset)
 
 void expresion_simple(set folset)
 {
-	test(,,);
+	test(first(EXPRESION_SIMPLE),folset | first(TERMINO) | COR,); //+ y - estan en el first
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 
-	termino();
+	termino(folset | CMAS | CMENOS | COR | first(TERMINO));
 
 	while(lookahead_in(CMAS | CMENOS | COR))
 	{
 		scanner();
-		termino();
+		termino(folset);
 	}
 }
 
 
 void termino(set folset)
 {	
-	factor();
+	factor(folset | CMULT | CDIV | CAND | first(FACTOR));
 
 	while(lookahead_in(CMULT | CDIV | CAND))
 	{
 		scanner();
-		factor();
+		factor(folset);
 	}
 }
 
 
 void factor(set folset)
 {
-	test(,,);
+	test(first(FACTOR),folset | first(VARIABLE) | first(CONSTANTE) | CNEG | CPAR_ABR | first(LLAMADA_FUNCION) | CCONS_STR,);
 	switch(lookahead())
 	{
 		case CIDENT:
 			/***************** Re-hacer *****************/
 			if(sbol->lexema[0] == 'f')
-				llamada_funcion();
+				llamada_funcion(folset);
 			else
-				variable();
+				variable(folset);
 			/********************************************/
 			/* El alumno debera evaluar con consulta a TS
 			si bifurca a variable o llamada a funcion */
@@ -486,7 +486,7 @@ void factor(set folset)
 		case CCONS_ENT:
 		case CCONS_FLO:
 		case CCONS_CAR:
-			constante();
+			constante(folset);
 			break;
 		
 		case CCONS_STR:
@@ -495,13 +495,13 @@ void factor(set folset)
 		
 		case CPAR_ABR:
 			scanner();
-			expresion();
+			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
 			break;
 			
 		case CNEG:
 			scanner();
-			expresion();
+			expresion(folset);
 			break;
 			
 		default:
@@ -513,7 +513,7 @@ void factor(set folset)
 
 void variable(set folset)
 {
-	test(,,);
+	test(first(VARIABLE),folset | CCOR_ABR | first(EXPRESION) | CCOR_CIE,);
 	match(CIDENT, 17);
 
 	/* El alumno debera verificar con una consulta a TS
@@ -523,7 +523,7 @@ void variable(set folset)
 	if(lookahead_in(CCOR_ABR))
 	{
 		scanner();
-		expresion();
+		expresion(folset);
 		match(CCOR_CIE, 21);
 	}
 	test(,,);
@@ -537,7 +537,7 @@ void llamada_funcion(set folset)
 	match(CPAR_ABR, 20);
 	
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
-		lista_expresiones();
+		lista_expresiones(folset | CPAR_CIE);
 
 	match(CPAR_CIE, 21);
 	test(,,);
@@ -546,19 +546,19 @@ void llamada_funcion(set folset)
 
 void lista_expresiones(set folset)
 {
-	expresion();
+	expresion(folset | CCOMA | first(EXPRESION));
 
 	while(lookahead_in(CCOMA))
 	{
 		scanner();
-		expresion();
+		expresion(folset);
 	}
 }
 
 
 void constante(set folset)
 {
-	test(,,);
+	test(first(CONSTANTE),folset,);
 	switch(lookahead())
 	{
 		case CCONS_ENT:
