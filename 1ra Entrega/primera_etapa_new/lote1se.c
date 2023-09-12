@@ -1,7 +1,6 @@
-int a=10;
-int b=1,c=10;
-int x=100;
+int a;
+int b,c;
 
 void f1(){
-	cout << c;
+    c=100;
 }

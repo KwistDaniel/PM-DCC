@@ -165,7 +165,7 @@ void declaracion_variable(set folset)
 	}
 
 	match(CPYCOMA, 23);
-	test(folset,NADA,44); //posible 51
+	test(folset,NADA,51);
 }
 
 
@@ -350,9 +350,9 @@ void proposicion_e_s(set folset)
 {
 	switch(lookahead())
 	{
-	    //case  >>
+	    case CSHR:
 		case CIN:
-			scanner(); //camboar a match
+			match(CIN,10); //CODIGO ERROR 10 (!)
 			
 			match(CSHR, 30);
 			
@@ -360,7 +360,7 @@ void proposicion_e_s(set folset)
 			
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
-				scanner();//cambiar a match
+				match(CSHR,10) // CODIGO ERROR 10 (!)
 				variable(folset | CPYCOMA | CSHR | first(VARIABLE));
 			}
 
@@ -368,9 +368,9 @@ void proposicion_e_s(set folset)
 			
 			break;
 
-		//case <<
+		case CSHL:
 		case COUT:
-			scanner(); //cambiar a match
+			match(COUT,10); //CODIGO ERROR 10 (!)
 
 			match(CSHL, 31);
 			
@@ -378,7 +378,7 @@ void proposicion_e_s(set folset)
 
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
-				scanner();//cambiar a match
+				match(CSHL,10) // CODIGO ERROR 10 (!)
 				expresion(folset | CPYCOMA | CSHL | first(EXPRESION));
 			}
 
@@ -524,7 +524,7 @@ void variable(set folset)
 
 	if(lookahead_in(CCOR_ABR, CCOR_CIE)) //VA FIRST DE EXPRESION?
 	{
-		match(CCOR_ABR,10); //ARREGLAR ERROR 10 (!)
+		match(CCOR_ABR,10); //CODIGO ERROR 10 (!)
 		expresion(folset);
 		match(CCOR_CIE, 21);
 	}
@@ -552,7 +552,7 @@ void lista_expresiones(set folset)
 
 	while(lookahead_in(CCOMA | first(EXPRESION)))
 	{
-		match(CCOMA,10); //CAMBIAR ERROR 10 (!)
+		match(CCOMA,10); //CODIGO ERROR 10 (!)
 		expresion(folset | CCOMA | first(EXPRESION));
 	}
 }
