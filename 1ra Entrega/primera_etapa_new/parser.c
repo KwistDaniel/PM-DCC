@@ -1,7 +1,8 @@
 #include "parser.h"
+#include "util.h"
 
 enum procedimientos {
-	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION,
+	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
 	DEFINICION_FUNCION, LISTA_DECLARACION_PARAM, DECLARACION_PARAMETRO, DECLARACION_VARIABLE,
 	LISTA_DECLARACIONES_INIT, DECLARADOR_INIT, LISTA_INICIALIZADORES, PROPOSICION_COMPUESTA,
 	LISTA_DECLARACIONES, DECLARACION, LISTA_PROPOSICIONES, PROPOSICION, PROPOSICION_ITERACION,
@@ -83,14 +84,8 @@ void especificador_declaracion(set folset)
 			break;
 		
 		case CASIGNAC:
-		    declaracion_variable(folset);
-		    break;
 		case CCOR_ABR:
-		    declaracion_variable(folset);
-		    break;
 		case CCOMA:
-		    declaracion_variable(folset);
-		    break;
 		case CPYCOMA:
 			declaracion_variable(folset);
 			break;
@@ -249,7 +244,7 @@ void declaracion(set folset)
 {
 	especificador_tipo(folset | first(LISTA_DECLARACIONES_INIT) | CPYCOMA);
 
-	lista_declaraciones_init();
+	lista_declaraciones_init(folset | CPYCOMA);
 
 	match(CPYCOMA, 23);
 	test(folset,NADA,51);
