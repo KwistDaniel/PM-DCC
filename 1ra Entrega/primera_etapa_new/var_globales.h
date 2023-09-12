@@ -1,16 +1,11 @@
 #define TAM_LEXEMA 200
-
 typedef long long set;
-#ifndef TEST_H
-#define TEST_H
+
 typedef struct { set codigo;
                  char lexema[TAM_LEXEMA];
                }token;
-#endif //TEST_H
 
 #define COD_IMP_ERRORES -1
-
-
 
 
 char * linea;
