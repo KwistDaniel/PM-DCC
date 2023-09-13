@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
 void unidad_traduccion(set folset)
 {
-    test(first(UNIDAD_TRADUCCION) | folset, first(DECLARACIONES),40); //Analizar c2
+    test(first(UNIDAD_TRADUCCION) | folset, NADA,40);
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		declaraciones(folset | first(DECLARACIONES));
 }
@@ -75,7 +75,7 @@ void especificador_tipo(set folset)
 
 void especificador_declaracion(set folset)
 {
-    test(first(ESPECIFICADOR_DECLARACION),folset | first(DEFINICION_FUNCION) | first(DECLARACION_VARIABLE),43); //Los dos firsts de c2 ya estan en c1 (!)
+    test(first(ESPECIFICADOR_DECLARACION), folset,43);
 	switch(lookahead())
 	{
 		case CPAR_ABR:
@@ -116,7 +116,7 @@ void lista_declaraciones_param(set folset) //Si toco lo de arriba, aca se afecta
 	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //lo puse
 	{
 		//scanner();
-		match(CCOMA,65);//Cambie scanner para que no consuma algo de dec parametro
+		match(CCOMA,64);//Cambie scanner para que no consuma algo de dec parametro
 		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
 	}
 }
@@ -131,8 +131,10 @@ void declaracion_parametro(set folset)
 
 	match(CIDENT, 17);
 
+    //if(lookahead_in(CCOR_ABR))
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
+	    //scanner();
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
 	}
@@ -142,14 +144,14 @@ void declaracion_parametro(set folset)
 
 void lista_declaraciones_init(set folset)
 {
-	test(first(LISTA_DECLARACIONES_INIT),folset | CIDENT | first(DECLARADOR_INIT) | CCOMA,46);
+	test(first(LISTA_DECLARACIONES_INIT),folset | first(DECLARADOR_INIT) | CCOMA,46);
 	match(CIDENT, 17);
 
 	declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
 
 	while(lookahead_in(CCOMA | CIDENT | first(DECLARADOR_INIT)))
 	{
-		match(CCOMA,65);
+		match(CCOMA,64);
 		match(CIDENT, 17);
 		declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
 	}
@@ -162,7 +164,7 @@ void declaracion_variable(set folset)
 
 	if(lookahead_in(CCOMA | first(LISTA_DECLARACIONES_INIT)))
 	{
-		match(CCOMA,65);
+		match(CCOMA,64);
 		lista_declaraciones_init(folset | CPYCOMA);
 	}
 
@@ -270,7 +272,7 @@ void lista_proposiciones(set folset)
 
 void proposicion(set folset)
 {
-	test(first(PROPOSICION),folset | first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S),52); //c2 puede ya estar en el first que esta en c1 (!)
+	test(first(PROPOSICION),folset /*| first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S)*/,52); //c2 puede ya estar en el first que esta en c1 (!)
 	switch(lookahead())
 	{
 		case CLLA_ABR:
@@ -308,7 +310,7 @@ void proposicion(set folset)
 			break;
 		
 		default:
-			error_handler(68);
+			error_handler(68); //68 es despues, esto deberia ser 26 no? (!!)
 	}
 }
 
@@ -452,7 +454,7 @@ void expresion_simple(set folset)
 
 	while(lookahead_in(CMAS | CMENOS | COR | first(TERMINO)))
 	{
-		scanner();
+		match(CMAS | CMENOS | COR,65);
 		termino(folset | CMAS | CMENOS | COR | first(TERMINO)); //VA CMAS | CMENOS | COR??
 	}
 }
@@ -464,7 +466,7 @@ void termino(set folset)
 
 	while(lookahead_in(CMULT | CDIV | CAND | first(FACTOR)))
 	{
-		scanner();
+		match(CMULT | CDIV | CAND,65);
 		factor(folset | CMULT | CDIV | CAND | first(FACTOR)); // VA CMULT | CDIV | CAND??
 	}
 }
@@ -472,7 +474,7 @@ void termino(set folset)
 
 void factor(set folset)
 {
-	test(first(FACTOR),folset | first(VARIABLE) | first(CONSTANTE) | CNEG | CPAR_ABR | first(LLAMADA_FUNCION) | CCONS_STR,57);
+	test(first(FACTOR), folset | CPAR_CIE,57);
 	switch(lookahead())
 	{
 		case CIDENT:
@@ -496,8 +498,9 @@ void factor(set folset)
 			scanner();
 			break;
 		
-		case CPAR_ABR: //Agrego el case que ponga el CPAR_CIE?
-			scanner();
+		case CPAR_ABR:
+		case CPAR_CIE:
+			match(CPAR_ABR,20);
 			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
 			break;
@@ -523,11 +526,11 @@ void variable(set folset)
 	si, siendo la variable un arreglo, corresponde o no
 	verificar la presencia del subindice */
 
-	if(lookahead_in(CCOR_ABR, CCOR_CIE)) //VA FIRST DE EXPRESION?
+	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores
 	{
 		match(CCOR_ABR,35);
 		expresion(folset | CCOR_CIE);
-		match(CCOR_CIE, 21);
+		match(CCOR_CIE, 22);
 	}
 	test(folset,NADA,60);
 }
