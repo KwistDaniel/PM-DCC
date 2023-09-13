@@ -113,7 +113,7 @@ set first(int noterminal)
 		case DECLARADOR_INIT: 			        return(NADA | CASIGNAC | CCOR_ABR);
 		case LISTA_INICIALIZADORES: 	        return(CCONS_ENT | CCONS_FLO | CCONS_CAR);
 		case PROPOSICION_COMPUESTA:             return(CLLA_ABR);
-		case LISTA_PROPOSICIONES:               return(CLLA_ABR);
+		case LISTA_PROPOSICIONES:               return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR | CPYCOMA | CLLA_ABR | CWHILE | CIF | CRETURN | CIN | COUT);
 		case PROPOSICION: 					    return(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR | CPYCOMA | CLLA_ABR | CWHILE | CIF | CRETURN | CIN | COUT);
 		case PROPOSICION_ITERACION:             return(CWHILE);
 		case PROPOSICION_SELECCION: 	        return(CIF);

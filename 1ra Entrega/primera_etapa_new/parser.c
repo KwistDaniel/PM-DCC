@@ -113,11 +113,11 @@ void lista_declaraciones_param(set folset) //Si toco lo de arriba, aca se afecta
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
 
     //while(lookahead_in(CCOMA )) //falta first declaracion parametro o mepa? (!!) CONSULTAR
-	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //lo puse
+	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //si toco arriba este lookahead in tmb
 	{
 		//scanner();
 		match(CCOMA,64);//Cambie scanner para que no consuma algo de dec parametro
-		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
+		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO)); //si toco arriba esta llamada tmb
 	}
 }
 
@@ -272,7 +272,7 @@ void lista_proposiciones(set folset)
 
 void proposicion(set folset)
 {
-	test(first(PROPOSICION),folset /*| first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S)*/,52); //c2 puede ya estar en el first que esta en c1 (!)
+	test(first(PROPOSICION),folset | CSHL | CSHR /*| first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S)*/,52); //c2 puede ya estar en el first que esta en c1 (!)
 	switch(lookahead())
 	{
 		case CLLA_ABR:
@@ -287,6 +287,8 @@ void proposicion(set folset)
 			proposicion_seleccion(folset);
 			break;
 
+        case CSHL: //Agregado por forzada en proposicion_e_s
+        case CSHR: //Agregado por forzada en proposicion_e_s
 		case CIN:
 		case COUT:
 			proposicion_e_s(folset);
@@ -310,7 +312,7 @@ void proposicion(set folset)
 			break;
 		
 		default:
-			error_handler(68); //68 es despues, esto deberia ser 26 no? (!!)
+			error_handler(26);
 	}
 }
 
@@ -392,7 +394,7 @@ void proposicion_e_s(set folset)
 		default:
 			error_handler(29);
 	}
-	test(folset,NADA,53);
+	test(folset | CSHL | CSHR,NADA,53); //Ver si necesito agregar con el folset el >> y << (!!) arreglar comentario
 }
 
 
@@ -446,7 +448,7 @@ void expresion(set folset)
 
 void expresion_simple(set folset)
 {
-	test(first(EXPRESION_SIMPLE),folset | COR,56); //+ y - estan en el first
+	test(first(EXPRESION_SIMPLE),folset | COR,56); //+ y - estan en el first y f1 de termino incluido en f1 exp_sim
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 
@@ -455,7 +457,7 @@ void expresion_simple(set folset)
 	while(lookahead_in(CMAS | CMENOS | COR | first(TERMINO)))
 	{
 		match(CMAS | CMENOS | COR,65);
-		termino(folset | CMAS | CMENOS | COR | first(TERMINO)); //VA CMAS | CMENOS | COR??
+		termino(folset | CMAS | CMENOS | COR | first(TERMINO));
 	}
 }
 
@@ -467,14 +469,14 @@ void termino(set folset)
 	while(lookahead_in(CMULT | CDIV | CAND | first(FACTOR)))
 	{
 		match(CMULT | CDIV | CAND,65);
-		factor(folset | CMULT | CDIV | CAND | first(FACTOR)); // VA CMULT | CDIV | CAND??
+		factor(folset | CMULT | CDIV | CAND | first(FACTOR));
 	}
 }
 
 
 void factor(set folset)
 {
-	test(first(FACTOR), folset | CPAR_CIE,57);
+	test(first(FACTOR), folset | CPAR_CIE,57); //Ver si saco CPAR_CIE por lote: if(k==) a;
 	switch(lookahead())
 	{
 		case CIDENT:
@@ -499,7 +501,7 @@ void factor(set folset)
 			break;
 		
 		case CPAR_ABR:
-		case CPAR_CIE:
+		case CPAR_CIE: //SACAR PAR CIE SI SACO ARRIBA
 			match(CPAR_ABR,20);
 			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
@@ -519,14 +521,14 @@ void factor(set folset)
 
 void variable(set folset)
 {
-	test(first(VARIABLE),folset | CCOR_ABR | first(EXPRESION) | CCOR_CIE,59);
+	test(first(VARIABLE),folset | CCOR_ABR,59); //POR SACAR DE ABAJO SACO DE ACA TMB FIRST EXP Y CCOR CIE
 	match(CIDENT, 17);
 
 	/* El alumno debera verificar con una consulta a TS
 	si, siendo la variable un arreglo, corresponde o no
 	verificar la presencia del subindice */
 
-	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores
+	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores (Para guardar registro)
 	{
 		match(CCOR_ABR,35);
 		expresion(folset | CCOR_CIE);
@@ -542,7 +544,7 @@ void llamada_funcion(set folset)
 	
 	match(CPAR_ABR, 20);
 	
-	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
+	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR)) // Incluyo CCOMA? con f(,b)
 		lista_expresiones(folset | CPAR_CIE);
 
 	match(CPAR_CIE, 21);
