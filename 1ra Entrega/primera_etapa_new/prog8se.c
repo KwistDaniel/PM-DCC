@@ -14,6 +14,6 @@ void main () {
  char v[20];
  char a='A';
 
-# fcalc(v,10,a); #
-v[1]=0;
+ fcalc (v, 10, a);
+
 }

@@ -99,7 +99,7 @@ void definicion_funcion(set folset)
 {
 	match(CPAR_ABR, 20);
 
-	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT)) //Analizar si incluyo algo mas(simbolos facil olvidar) (!)
+	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT)) //Analizar si incluyo algo mas(simbolos facil olvidar) (**-)
 		lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA));
 
 	match(CPAR_CIE, 21);
@@ -108,12 +108,12 @@ void definicion_funcion(set folset)
 }
 
 
-void lista_declaraciones_param(set folset) //Si toco lo de arriba, aca se afecta el folset de dec de param (!)
+void lista_declaraciones_param(set folset) //(**-)
 {
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
 
-    //while(lookahead_in(CCOMA )) //falta first declaracion parametro o mepa? (!!) CONSULTAR
-	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //si toco arriba este lookahead in tmb
+    //while(lookahead_in(CCOMA )) //Se agrego el first de DECLARACION_PARAMETRO
+	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //(**-)
 	{
 		//scanner();
 		match(CCOMA,64);//Cambie scanner para que no consuma algo de dec parametro
@@ -394,7 +394,7 @@ void proposicion_e_s(set folset)
 		default:
 			error_handler(29);
 	}
-	test(folset | CSHL | CSHR,NADA,53); //Ver si necesito agregar con el folset el >> y << (!!) arreglar comentario
+	test(folset | CSHL | CSHR,NADA,53); //agregados el >> y << porque se fuerza entrada en case de arriba
 }
 
 
@@ -476,7 +476,8 @@ void termino(set folset)
 
 void factor(set folset)
 {
-	test(first(FACTOR), folset | CPAR_CIE,57); //Ver si saco CPAR_CIE por lote: if(k==) a;
+	test(first(FACTOR), folset /*| CPAR_CIE*/,57); //Ver si saco CPAR_CIE por lote: if(k==) a;
+	/** Lo tuve que sacar por lote propio: lote3ce.c en linea 21: f1(ab,); se colgaba la ejecucion **/
 	switch(lookahead())
 	{
 		case CIDENT:
@@ -501,7 +502,7 @@ void factor(set folset)
 			break;
 		
 		case CPAR_ABR:
-		case CPAR_CIE: //SACAR PAR CIE SI SACO ARRIBA
+		//case CPAR_CIE: //SACAR PAR CIE SI SACO ARRIBA
 			match(CPAR_ABR,20);
 			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
