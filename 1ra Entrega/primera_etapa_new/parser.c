@@ -112,9 +112,11 @@ void lista_declaraciones_param(set folset) //Si toco lo de arriba, aca se afecta
 {
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
 
-	while(lookahead_in(CCOMA))
+    //while(lookahead_in(CCOMA )) //falta first declaracion parametro o mepa? (!!) CONSULTAR
+	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //lo puse
 	{
-		scanner();
+		//scanner();
+		match(CCOMA,65);//Cambie scanner para que no consuma algo de dec parametro
 		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
 	}
 }
@@ -129,9 +131,9 @@ void declaracion_parametro(set folset)
 
 	match(CIDENT, 17);
 
-	if(lookahead_in(CCOR_ABR)) //Ver si fuerzo entrada por si se olvidan el que abre pero no el que cierra (!)
+	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
-		scanner();
+		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
 	}
 	test(folset,NADA,45);
@@ -140,14 +142,14 @@ void declaracion_parametro(set folset)
 
 void lista_declaraciones_init(set folset)
 {
-	test(first(LISTA_DECLARACIONES_INIT),folset | CIDENT | first(DECLARADOR_INIT) | CCOMA | CIDENT,46);
+	test(first(LISTA_DECLARACIONES_INIT),folset | CIDENT | first(DECLARADOR_INIT) | CCOMA,46);
 	match(CIDENT, 17);
 
 	declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
 
-	while(lookahead_in(CCOMA | CIDENT | first(DECLARADOR_INIT))) //Agregados CIDENT y first (!)
+	while(lookahead_in(CCOMA | CIDENT | first(DECLARADOR_INIT)))
 	{
-		scanner();
+		match(CCOMA,65);
 		match(CIDENT, 17);
 		declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
 	}
@@ -160,7 +162,7 @@ void declaracion_variable(set folset)
 
 	if(lookahead_in(CCOMA | first(LISTA_DECLARACIONES_INIT)))
 	{
-		scanner();
+		match(CCOMA,65);
 		lista_declaraciones_init(folset | CPYCOMA);
 	}
 
@@ -177,8 +179,7 @@ void declarador_init(set folset)
 	    case CCONS_FLO:
 	    case CCONS_CAR:
 		case CASIGNAC:
-			match(CASIGNAC,10); //(!) Corregir num error
-			scanner();
+			match(CASIGNAC,66);
 			constante(folset);
 			break;
 
@@ -352,7 +353,7 @@ void proposicion_e_s(set folset)
 	{
 	    case CSHR:
 		case CIN:
-			match(CIN,10); //CODIGO ERROR 10 (!)
+			match(CIN,29);
 			
 			match(CSHR, 30);
 			
@@ -360,7 +361,7 @@ void proposicion_e_s(set folset)
 			
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
-				match(CSHR,10) // CODIGO ERROR 10 (!)
+				match(CSHR,30);
 				variable(folset | CPYCOMA | CSHR | first(VARIABLE));
 			}
 
@@ -370,7 +371,7 @@ void proposicion_e_s(set folset)
 
 		case CSHL:
 		case COUT:
-			match(COUT,10); //CODIGO ERROR 10 (!)
+			match(COUT,29);
 
 			match(CSHL, 31);
 			
@@ -378,7 +379,7 @@ void proposicion_e_s(set folset)
 
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
-				match(CSHL,10) // CODIGO ERROR 10 (!)
+				match(CSHL,31);
 				expresion(folset | CPYCOMA | CSHL | first(EXPRESION));
 			}
 
@@ -424,7 +425,7 @@ void expresion(set folset)
 		{
 			case CASIGNAC:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG); //Deberia llevar first de Exp simp??
 				break;
 				
 			case CDISTINTO:
@@ -434,7 +435,7 @@ void expresion(set folset)
 			case CMAYOR:
 			case CMAIG:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);  //Deberia llevar first de Exp simp??
 				break;
 		}
 	}
@@ -495,7 +496,7 @@ void factor(set folset)
 			scanner();
 			break;
 		
-		case CPAR_ABR:
+		case CPAR_ABR: //Agrego el case que ponga el CPAR_CIE?
 			scanner();
 			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
@@ -524,8 +525,8 @@ void variable(set folset)
 
 	if(lookahead_in(CCOR_ABR, CCOR_CIE)) //VA FIRST DE EXPRESION?
 	{
-		match(CCOR_ABR,10); //CODIGO ERROR 10 (!)
-		expresion(folset);
+		match(CCOR_ABR,35);
+		expresion(folset | CCOR_CIE);
 		match(CCOR_CIE, 21);
 	}
 	test(folset,NADA,60);
@@ -552,7 +553,7 @@ void lista_expresiones(set folset)
 
 	while(lookahead_in(CCOMA | first(EXPRESION)))
 	{
-		match(CCOMA,10); //CODIGO ERROR 10 (!)
+		match(CCOMA,64);
 		expresion(folset | CCOMA | first(EXPRESION));
 	}
 }
