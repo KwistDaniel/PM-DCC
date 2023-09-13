@@ -1,5 +1,13 @@
 int a;
 int b,c;
+int a;
+int b,c;
+
+a=10;
+b=10;
+int c;
+c=10;
+int a;
 
 void f1(){
     int a;
