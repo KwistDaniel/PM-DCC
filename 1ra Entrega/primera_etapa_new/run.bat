@@ -2,7 +2,8 @@
 make clean
 make
 :: Compilacion de los lotes de prueba
-:: Lotes del profe:
+:: Lotes de la catedra:
+:: Sin errores:
 ucc -c prog1se.c
 ucc -c prog2se.c
 ucc -c prog3se.c
@@ -11,6 +12,11 @@ ucc -c prog5se.c
 ucc -c prog6se.c
 ucc -c prog7se.c
 ucc -c prog8se.c
+:: Con errores:
+ucc -c lote_error_decl_asig_param_double.c
+ucc -c lote_error_declaraciones_asignaciones_parametros.c
+ucc -c lote_errores_ES.c
+ucc -c lote_errores_expresiones_while_if.c
 
 :: Lotes propios:
 :: Sin errores:
