@@ -230,7 +230,7 @@ void proposicion_compuesta(set folset)
 		lista_declaraciones(folset | first(LISTA_PROPOSICIONES) | CLLA_CIE);
 
 	if(lookahead_in(CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
-						 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
+						 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CSHL | CSHR | // Agregados CSHL y CSHR para reconocer que falta CIN y COUT (error: void main(){<< "hola";})
 						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN))
 		lista_proposiciones(folset | CLLA_CIE);
 
