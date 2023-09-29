@@ -4,6 +4,7 @@
 #include "codigos.h"
 #include "util.h"
 #include "error.h"
+#include "ts.h"
 
 int last_call=0;
 

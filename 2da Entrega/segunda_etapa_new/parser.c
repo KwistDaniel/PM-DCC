@@ -12,8 +12,14 @@ enum procedimientos {
 int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
+
+    inic_tablas();
+
+    pushTB();
 	
 	unidad_traduccion(CEOF);
+
+	popTB o popnivel?
 
 	match(CEOF, 9);
 
@@ -37,19 +43,23 @@ void unidad_traduccion(set folset)
 
 void declaraciones(set folset)
 {	
-## Tiene retorno y guardar en una var local	especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION));
-	##guardar en inf_id el nombre de la var que es CIDENT, asi no la pierdo (sbol->lexema)
+## Tiene retorno y guardar en una var local
+    DONDE GUARDO? = especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION));
+	##guardar en inf_id->nombre de la var que es CIDENT, asi no la pierdo (sbol->lexema)
+	strcpy(inf_id->nbre,sbol->lexema);
 	match(CIDENT, 17);
 	
 	especificador_declaracion(folset);
 }
 
 
-#cambia a int, y en cada rama devolver el en_tabla previo al scanner. void especificador_tipo(set folset)
+#cambia a int, y en cada rama devolver el en_tabla previo al scanner.
+int especificador_tipo(set folset)
 {
 	test(first(ESPECIFICADOR_TIPO), folset, 41);
 	switch(lookahead())
 	{
+	PARA ACCEDER A LOS TIPOS BUSCO EN LA TS CADA TIPO CADA VEZ QUE NECESITO VERIFICAR?
 		case CVOID:
 			scanner();
 			break;
