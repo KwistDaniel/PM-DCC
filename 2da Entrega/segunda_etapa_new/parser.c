@@ -1,4 +1,8 @@
+#include <string.h>
 #include "parser.h"
+
+
+int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR;
 
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
@@ -15,11 +19,20 @@ int main(int argc, char *argv[])
 
     inic_tablas();
 
-    pushTB();
+    TIPOVOID = en_tabla("void");
+    TIPOCHAR = en_tabla("char");
+    TIPOINT = en_tabla("int");
+    TIPOFLOAT = en_tabla("float");
+    TIPOARREGLO = en_tabla("TIPOARREGLO");
+    TIPOERROR = en_tabla("TIPOERROR");
+
+    pushTB();//Bloq 0
 	
 	unidad_traduccion(CEOF);
 
-	popTB o popnivel?
+	pop_nivel();
+
+	//Ver si quiero limpiar el inic tabla
 
 	match(CEOF, 9);
 
@@ -42,61 +55,67 @@ void unidad_traduccion(set folset)
 
 
 void declaraciones(set folset)
-{	
-## Tiene retorno y guardar en una var local
-    DONDE GUARDO? = especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION));
-	##guardar en inf_id->nombre de la var que es CIDENT, asi no la pierdo (sbol->lexema)
+{
+    int tipo = especificador_tipo(folset | CIDENT | first(ESPECIFICADOR_DECLARACION));
+
 	strcpy(inf_id->nbre,sbol->lexema);
+
 	match(CIDENT, 17);
 	
-	especificador_declaracion(folset);
+	especificador_declaracion(folset,tipo);
 }
 
 
-#cambia a int, y en cada rama devolver el en_tabla previo al scanner.
+
 int especificador_tipo(set folset)
 {
 	test(first(ESPECIFICADOR_TIPO), folset, 41);
+	int posicionTipo;
 	switch(lookahead())
 	{
-	PARA ACCEDER A LOS TIPOS BUSCO EN LA TS CADA TIPO CADA VEZ QUE NECESITO VERIFICAR?
 		case CVOID:
+		    posicionTipo = TIPOVOID;
 			scanner();
 			break;
 			
 		case CCHAR:
+		    posicionTipo = TIPOCHAR;
 			scanner();
 			break;
 			
 		case CINT:
+		    posicionTipo = TIPOINT;
 			scanner();
 			break;
 			
 		case CFLOAT:
+		    posicionTipo = TIPOFLOAT;
 			scanner();
 			break;
 			
 		default:
+		    posicionTipo = TIPOERROR;
 			error_handler(18);
 	}
     test(folset, NADA, 42);
+    return (posicionTipo);
 }
 
 
-void especificador_declaracion(set folset)
+void especificador_declaracion(set folset, int tipo)
 {
     test(first(ESPECIFICADOR_DECLARACION), folset,43);
 	switch(lookahead())
 	{
 		case CPAR_ABR:
-			definicion_funcion(folset);
+			definicion_funcion(folset,tipo);
 			break;
 		
 		case CASIGNAC:
 		case CCOR_ABR:
 		case CCOMA:
 		case CPYCOMA:
-			declaracion_variable(folset);
+			declaracion_variable(folset,tipo);
 			break;
 		
 		default:
@@ -105,49 +124,65 @@ void especificador_declaracion(set folset)
 }
 
 
-void definicion_funcion(set folset)
+void definicion_funcion(set folset,int tipo)
 {
-	match(CPAR_ABR, 20);
+    inf_id->ptr_tipo = tipo;
+    inf_id->clase = CLASFUNC;
+    int posicionTSF = insertarTS();
 
-	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT)) //Analizar si incluyo algo mas(simbolos facil olvidar) (**-)
-		lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA));
+    //RECORDAR PARAMETROS (insertar ts devuelve pos donde inserta, guardar eso en una variable para los parametros)
+	match(CPAR_ABR, 20);
+	pushTB();
+
+	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
+		lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
 
 	match(CPAR_CIE, 21);
 
-	proposicion_compuesta(folset);
+	proposicion_compuesta(folset,0); //paso 0 para indicar que no hay que hacer un pushTB();
 }
 
 
-void lista_declaraciones_param(set folset) //(**-)
+void lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion para completar param (***-)
 {
-	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO));
+	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
 
     //while(lookahead_in(CCOMA )) //Se agrego el first de DECLARACION_PARAMETRO
-	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO))) //(**-)
+	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO)))
 	{
 		//scanner();
 		match(CCOMA,64);//Cambie scanner para que no consuma algo de dec parametro
-		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO)); //si toco arriba esta llamada tmb
+		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF); //si toco arriba esta llamada tmb
 	}
 }
 
 
-void declaracion_parametro(set folset)
+void declaracion_parametro(set folset, int posicionTSF)
 {
-	especificador_tipo(folset | CAMPER | CIDENT | CCOR_ABR | CCOR_CIE);
+	int tipo = especificador_tipo(folset | CAMPER | CIDENT | CCOR_ABR | CCOR_CIE);
 
-	if(lookahead_in(CAMPER))
-		scanner();
+	if(lookahead_in(CAMPER)){
+	    scanner();
+	    inf_id->desc.param.tipo_pje = 'd';
+	}
+	else{
+	    inf_id->desc.param.tipo_pje = 'v';
+	}
 
 	match(CIDENT, 17);
 
-    //if(lookahead_in(CCOR_ABR))
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
-	    //scanner();
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
+		inf_id->desc.param.ptero_tipo_base = tipo;
+		inf_id->ptr_tipo = TIPOARREGLO;
 	}
+	else{
+	    inf_id->ptr_tipo = tipo;
+	}
+	inf_id->clase = CLASPAR;
+	insertarTS();
 	test(folset,NADA,45);
 }
 
@@ -168,9 +203,9 @@ void lista_declaraciones_init(set folset)
 }
 
 
-void declaracion_variable(set folset)
+void declaracion_variable(set folset, int tipo)
 {
-	declarador_init(folset | CCOMA | first(LISTA_DECLARACIONES_INIT) | CPYCOMA);
+	declarador_init(folset | CCOMA | first(LISTA_DECLARACIONES_INIT) | CPYCOMA, tipo);
 
 	if(lookahead_in(CCOMA | first(LISTA_DECLARACIONES_INIT)))
 	{
@@ -183,7 +218,7 @@ void declaracion_variable(set folset)
 }
 
 
-void declarador_init(set folset)
+void declarador_init(set folset, int tipo)
 {
 	test(first(DECLARADOR_INIT) | folset, CASIGNAC | CCONS_FLO | CCONS_CAR | CCOR_ABR | CCOR_CIE | CLLA_ABR | CLLA_CIE,47); //Se quito el CCON_ENT y donde aparece (first const y first lis in) (!)
 	switch(lookahead())
@@ -191,6 +226,8 @@ void declarador_init(set folset)
 	    case CCONS_FLO:
 	    case CCONS_CAR:
 		case CASIGNAC:
+		    inf_id->ptr_tipo = tipo;
+		    //revisar si falta algo
 			match(CASIGNAC,66);
 			constante(folset);
 			break;
@@ -199,10 +236,16 @@ void declarador_init(set folset)
         case CLLA_CIE:
         case CCOR_CIE:
 		case CCOR_ABR:
+		    inf_id->ptr_tipo = TIPOARREGLO;
+
+		    inf_id->desc.arr.ptero_tipo_base = tipo;
 			match(CCOR_ABR, 35);
 			
-			if(lookahead_in(CCONS_ENT))
-				constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
+			if(lookahead_in(CCONS_ENT)){
+			    inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
+			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
+			}
+
 
 			match(CCOR_CIE, 22);
 
@@ -215,6 +258,8 @@ void declarador_init(set folset)
 			}
 			break;
 	}
+	inf_id->clase = CLASVAR;
+	insertarTS();
 	test(folset,NADA,48);
 }
 
@@ -231,8 +276,11 @@ void lista_inicializadores(set folset)
 }
 
 
-void proposicion_compuesta(set folset)
+void proposicion_compuesta(set folset,int abrir_bloque)
 {
+    if(abrir_bloque==1){
+        pushTB();
+    }
 	test(first(PROPOSICION_COMPUESTA),folset | first(LISTA_DECLARACIONES) | first(LISTA_PROPOSICIONES) | CLLA_CIE,49);
 	match(CLLA_ABR, 24);
 
