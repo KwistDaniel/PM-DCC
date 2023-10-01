@@ -147,12 +147,10 @@ void lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion
 {
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
 
-    //while(lookahead_in(CCOMA )) //Se agrego el first de DECLARACION_PARAMETRO
 	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO)))
 	{
-		//scanner();
-		match(CCOMA,64);//Cambie scanner para que no consuma algo de dec parametro
-		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF); //si toco arriba esta llamada tmb
+		match(CCOMA,64);
+		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
 	}
 }
 
@@ -161,21 +159,33 @@ void declaracion_parametro(set folset, int posicionTSF)
 {
 	int tipo = especificador_tipo(folset | CAMPER | CIDENT | CCOR_ABR | CCOR_CIE);
 
+    int control28 = 0;
+
 	if(lookahead_in(CAMPER)){
 	    scanner();
-	    inf_id->desc.param.tipo_pje = 'd';
+	    //inf_id->desc.param.tipo_pje = 'd';
+	    inf_id->desc.part_var.param.tipo_pje = 'd';
+	    control28 = 1; //Se uso el &, controlar que no venga un arreglo (28)
 	}
 	else{
-	    inf_id->desc.param.tipo_pje = 'v';
+	    //inf_id->desc.param.tipo_pje = 'v';
+	    inf_id->desc.part_var.param.tipo_pje = 'v';
 	}
+
+	inf_id->ptr_tipo = tipo;
+	strcpy(inf_id->nbre,sbol->lexema);
 
 	match(CIDENT, 17);
 
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
+	    if(control28){
+	        error_handler(92); //<tipo> & <nombre arreglo> []
+	    }
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
-		inf_id->desc.param.ptero_tipo_base = tipo;
+		//inf_id->desc.param.ptero_tipo_base = tipo;
+		inf_id->desc.part_var.param.ptero_tipo_base = tipo;
 		inf_id->ptr_tipo = TIPOARREGLO;
 	}
 	else{
@@ -183,6 +193,7 @@ void declaracion_parametro(set folset, int posicionTSF)
 	}
 	inf_id->clase = CLASPAR;
 	insertarTS();
+	// (***-) Revisar si falta algo del parametro, alguna info, para darlo de alta
 	test(folset,NADA,45);
 }
 
@@ -190,6 +201,7 @@ void declaracion_parametro(set folset, int posicionTSF)
 void lista_declaraciones_init(set folset)
 {
 	test(first(LISTA_DECLARACIONES_INIT),folset | first(DECLARADOR_INIT) | CCOMA,46);
+
 	match(CIDENT, 17);
 
 	declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
@@ -221,14 +233,17 @@ void declaracion_variable(set folset, int tipo)
 void declarador_init(set folset, int tipo)
 {
 	test(first(DECLARADOR_INIT) | folset, CASIGNAC | CCONS_FLO | CCONS_CAR | CCOR_ABR | CCOR_CIE | CLLA_ABR | CLLA_CIE,47); //Se quito el CCON_ENT y donde aparece (first const y first lis in) (!)
+
+	int dimension = -1, sin_dimension = -1;
+
 	switch(lookahead())
 	{
 	    case CCONS_FLO:
 	    case CCONS_CAR:
 		case CASIGNAC:
 		    inf_id->ptr_tipo = tipo;
-		    //revisar si falta algo
 			match(CASIGNAC,66);
+			//falta algo? X la asignacion digo
 			constante(folset);
 			break;
 
@@ -238,25 +253,53 @@ void declarador_init(set folset, int tipo)
 		case CCOR_ABR:
 		    inf_id->ptr_tipo = TIPOARREGLO;
 
-		    inf_id->desc.arr.ptero_tipo_base = tipo;
+		    //inf_id->desc.arr.ptero_tipo_base = tipo;
+		    inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
+		    // (***-) Aca puedo controlar que sea float,int o char para regla 7???
 			match(CCOR_ABR, 35);
 			
 			if(lookahead_in(CCONS_ENT)){
-			    inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
+			    dimension = atoi(sbol->lexema);
+			    if(dimension <= 0){
+			        error_handler(75); //La cantidad de elementos de un arreglo puede estar dada por un número natural (es decir, mayor a 0) y/o a través de la inicialización del mismo.
+			    }
+			    //****// (***-) Cual de las 2 uso? el else o le asigno nomas??
+			    //inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
+			    //else{inf_id->desc.arr.cant_elem = atoi(sbol->lexema);}
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
 			}
+			else if(lookahead_in(CCOR_CIE)){
+			    sin_dimension = 1;
+			} //Else error 74???? (***-) hace falta aca? va en otro lado?
 
 
 			match(CCOR_CIE, 22);
 
+
+            int cantidad_elementos = 0;
 			if(lookahead_in(CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES)))
 			{
 				match(CASIGNAC,66);
 				match(CLLA_ABR, 24);
-				lista_inicializadores(folset | CLLA_CIE);
+				cantidad_elementos = lista_inicializadores(folset | CLLA_CIE, tipo);
+
+				if(sin_dimension){
+				    inf_id->desc.part_var.arr.cant_elem = cantidad_elementos;
+				}
+				else if((dimension > 0) && cantidad_elementos != dimension){
+				    error_handler(76); // La cantidad de valores inicializadores debe ser igual o menor al tamaño del arreglo declarado
+				    //(***-) EL ERROR DICE IGUAL O MENOR, entonces cantidad_elementos > dimension seria el control, cierto?
+
+				}
+				else{
+				    inf_id->desc.part_var-arr-cant_elem = dimension;
+				}
+
 				match(CLLA_CIE, 25);
 			}
 			break;
+
+
 	}
 	inf_id->clase = CLASVAR;
 	insertarTS();
@@ -264,15 +307,27 @@ void declarador_init(set folset, int tipo)
 }
 
 
-void lista_inicializadores(set folset)
+int lista_inicializadores(set folset, int tipo_base)
 {
-	constante(folset | CCOMA | first(CONSTANTE));
+    int tipo_constante, cantidad_elementos = 0;
+	tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
+	cantidad_elementos++;
+
+	if(tipo_constante != tipo_base){
+	    error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
+	}
 
 	while(lookahead_in(CCOMA | first(CONSTANTE)))
 	{
 		match(CCOMA,64);
-		constante(folset | CCOMA | first(CONSTANTE));
+		tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
+
+	    if(tipo_constante != tipo_base){
+            error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
+        }
+		cantidad_elementos++;
 	}
+	return cantidad_elementos;
 }
 
 
@@ -623,25 +678,31 @@ void lista_expresiones(set folset)
 }
 
 
-void constante(set folset)
+int constante(set folset)
 {
+    int tipo;
 	test(first(CONSTANTE),folset,62);
 	switch(lookahead())
 	{
 		case CCONS_ENT:
+		    tipo = TIPOINT;
 			scanner();
 			break;
 		
 		case CCONS_FLO:
+		    tipo = TIPOFLOAT;
 			scanner();
 			break;
 		
 		case CCONS_CAR:
+		    tipo = TIPOCHAR;
 			scanner();
 			break;
 		
 		default:
+		    tipo = TIPOERROR; //(***-) Este va?
 			error_handler(33);
 	}
 	test(folset,NADA,63);
+	return tipo;
 }
