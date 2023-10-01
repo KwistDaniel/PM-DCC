@@ -1,3 +1,7 @@
+declaracion_parametro:
+	-La regla 27 no la entiendo bien, que tengo que revisar? o como?
+	-No entiendo donde usar posicionTSF
+
 declarador_init:
 	-lo de controlar el tipo del arreglo?
 	-como le doy la cant de elems? onda el else o asi pelado?
