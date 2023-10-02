@@ -129,29 +129,41 @@ void definicion_funcion(set folset,int tipo)
     inf_id->ptr_tipo = tipo;
     inf_id->clase = CLASFUNC;
     int posicionTSF = insertarTS();
+    int cantidad_parametros = 0;
 
     //RECORDAR PARAMETROS (insertar ts devuelve pos donde inserta, guardar eso en una variable para los parametros)
 	match(CPAR_ABR, 20);
 	pushTB();
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
-		lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
+		cantidad_parametros = lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
 
 	match(CPAR_CIE, 21);
+
+	//Ir a la pos en la TS y darle el num de params que conte
+	ts[posicionTSF].ets->desc.part_var.sub.cant_par = cantidad_parametros;
 
 	proposicion_compuesta(folset,0); //paso 0 para indicar que no hay que hacer un pushTB();
 }
 
 
-void lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion para completar param (***-)
+int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion para completar param (***-)
 {
+    int cantidad_parametros = 0;
+
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
+
+    cantidad_parametros++;
 
 	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO)))
 	{
 		match(CCOMA,64);
 		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
+		//Falta hacer algo mas? por donde estan los parametros
+		cantidad_parametros++;
 	}
+
+	return cantidad_parametros;
 }
 
 
@@ -172,8 +184,8 @@ void declaracion_parametro(set folset, int posicionTSF)
 	    inf_id->desc.part_var.param.tipo_pje = 'v';
 	}
 
-	inf_id->ptr_tipo = tipo;
 	strcpy(inf_id->nbre,sbol->lexema);
+	inf_id->clase = CLASPAR;
 
 	match(CIDENT, 17);
 
@@ -191,9 +203,12 @@ void declaracion_parametro(set folset, int posicionTSF)
 	else{
 	    inf_id->ptr_tipo = tipo;
 	}
-	inf_id->clase = CLASPAR;
+
+
+    //Ver con el profe como hago para poner los datos que faltan al parametro
+    //Osea tengo que usar la info que tengo de posicionTSF para llenar la info de la func y eso
+
 	insertarTS();
-	// (***-) Revisar si falta algo del parametro, alguna info, para darlo de alta
 	test(folset,NADA,45);
 }
 
@@ -263,7 +278,7 @@ void declarador_init(set folset, int tipo)
 			    if(dimension <= 0){
 			        error_handler(75); //La cantidad de elementos de un arreglo puede estar dada por un número natural (es decir, mayor a 0) y/o a través de la inicialización del mismo.
 			    }
-			    //****// (***-) Cual de las 2 uso? el else o le asigno nomas??
+			    ////*****//// (***-) Cual de las 2 uso? el else o le asigno nomas??
 			    //inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
 			    //else{inf_id->desc.arr.cant_elem = atoi(sbol->lexema);}
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
@@ -594,14 +609,31 @@ void factor(set folset)
 	switch(lookahead())
 	{
 		case CIDENT:
-			/***************** Re-hacer *****************/
-			if(sbol->lexema[0] == 'f')
-				llamada_funcion(folset);
-			else
-				variable(folset);
-			/********************************************/
-			/* El alumno debera evaluar con consulta a TS
-			si bifurca a variable o llamada a funcion */
+		    if(en_tabla(sbol->lexema) == NIL){ //COMPARO CON NIL PQ EN DEFINICION NIL ES -1
+		        error_handler(71);
+		        //Aca lo deberia insertar como tipo error para que marque cada vez que lo quiera usar???
+		        /*
+		        strcpy(inf_id->nbre,sbol->lexema);
+		        inf_id->ptr_tipo = TIPOERROR;
+		        insertarTS)=;
+		        */
+
+
+		    }
+		    //Si lo ingreso como tipo error consulto ahora nuevamente
+		    //Si no lo ingreso, hago else if en vez de else?
+
+		    if(Clase_Ident(sbol->lexema) == CLASFUNC){
+		        llamada_funcion(folset);
+		    }
+		    else if(Clase_Ident(sbol->lexema) == CLASVAR){
+		        variable(folset);
+		    }
+		    else{
+		        error_handler(10);
+		        printf("\n\nError en factor -> switch -> case CIDENT -> else \n\n");
+		        //Tendre un caso que entre aca? Revisar
+		    }
 			break;
 		
 		case CCONS_ENT:

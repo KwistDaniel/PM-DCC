@@ -16,7 +16,7 @@ int especificador_tipo();
 void especificador_declaracion();
 void definicion_funcion();
 void declaracion_variable();
-void lista_declaraciones_param();
+int lista_declaraciones_param();
 void declaracion_parametro();
 void declarador_init();
 void lista_declaraciones_init();

@@ -1,6 +1,6 @@
 declaracion_parametro:
 	-La regla 27 no la entiendo bien, que tengo que revisar? o como?
-	-No entiendo donde usar posicionTSF
+	-Ver lo de antes de insertarTS(), la info que falta llenar
 
 declarador_init:
 	-lo de controlar el tipo del arreglo?
@@ -11,3 +11,6 @@ declarador_init:
 		EL SISTEMA DE TIPOS CREO QUE NO ME DICE NADA DE ESTO
 		En esta parte tmb estoy controlando bien la regla 8? osea que si tiene constante ([8]) y lista de inic sea de mismo tamaño?
 		El tema con la linea de arriba es que si la lista de inic es de mas tamaño, el cartel de error 76 me dice que esta bien
+
+factor:
+	-en case CIDENT, lo doy de alta tipo error si no existe?
