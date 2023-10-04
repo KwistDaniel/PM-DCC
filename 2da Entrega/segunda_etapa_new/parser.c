@@ -208,7 +208,10 @@ void declaracion_parametro(set folset, int posicionTSF)
     //Ver con el profe como hago para poner los datos que faltan al parametro
     //Osea tengo que usar la info que tengo de posicionTSF para llenar la info de la func y eso
 
-	insertarTS();
+	insertarTS();//Insert de tipo parametro
+	//Actualizar la ts
+	ts[posicionTSF]-> o . ,....
+	//Ya estoy sumando la cantidad de parametros mas arriba
 	test(folset,NADA,45);
 }
 
@@ -267,8 +270,8 @@ void declarador_init(set folset, int tipo)
         case CCOR_CIE:
 		case CCOR_ABR:
 		    inf_id->ptr_tipo = TIPOARREGLO;
-
-		    //inf_id->desc.arr.ptero_tipo_base = tipo;
+		    //Controlar que tipo sea char int o float asi cumplo regla 7 aca.
+		    //VER DONDE REVISO REGLA 5
 		    inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
 		    // (***-) Aca puedo controlar que sea float,int o char para regla 7???
 			match(CCOR_ABR, 35);
@@ -277,15 +280,16 @@ void declarador_init(set folset, int tipo)
 			    dimension = atoi(sbol->lexema);
 			    if(dimension <= 0){
 			        error_handler(75); //La cantidad de elementos de un arreglo puede estar dada por un número natural (es decir, mayor a 0) y/o a través de la inicialización del mismo.
+
 			    }
 			    ////*****//// (***-) Cual de las 2 uso? el else o le asigno nomas??
 			    //inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
-			    //else{inf_id->desc.arr.cant_elem = atoi(sbol->lexema);}
+			    else{inf_id->desc.arr.cant_elem = atoi(sbol->lexema);}
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
 			}
 			else if(lookahead_in(CCOR_CIE)){
 			    sin_dimension = 1;
-			} //Else error 74???? (***-) hace falta aca? va en otro lado?
+			}
 
 
 			match(CCOR_CIE, 22);
@@ -301,17 +305,21 @@ void declarador_init(set folset, int tipo)
 				if(sin_dimension){
 				    inf_id->desc.part_var.arr.cant_elem = cantidad_elementos;
 				}
-				else if((dimension > 0) && cantidad_elementos != dimension){
+				else if((dimension > 0) && cantidad_elementos > dimension){
 				    error_handler(76); // La cantidad de valores inicializadores debe ser igual o menor al tamaño del arreglo declarado
-				    //(***-) EL ERROR DICE IGUAL O MENOR, entonces cantidad_elementos > dimension seria el control, cierto?
-
 				}
 				else{
 				    inf_id->desc.part_var-arr-cant_elem = dimension;
 				}
+				//// !!!! //Else error 74???? (***-) hace falta aca? va en otro lado? SI NO VINO CONSTANTE ENTERA NI LISTA DE INICIALIZADORES VA ERROR 74
+				//VER QUE VAYA DONDE VA
 
 				match(CLLA_CIE, 25);
 			}
+
+
+
+
 			break;
 
 
@@ -610,30 +618,29 @@ void factor(set folset)
 	{
 		case CIDENT:
 		    if(en_tabla(sbol->lexema) == NIL){ //COMPARO CON NIL PQ EN DEFINICION NIL ES -1
-		        error_handler(71);
-		        //Aca lo deberia insertar como tipo error para que marque cada vez que lo quiera usar???
-		        /*
+		        error_handler(71); //Identificador no declarado
 		        strcpy(inf_id->nbre,sbol->lexema);
 		        inf_id->ptr_tipo = TIPOERROR;
-		        insertarTS)=;
-		        */
-
-
+		        insertarTS();
+		        // (***-) Ver si falta mas info que poner
 		    }
-		    //Si lo ingreso como tipo error consulto ahora nuevamente
-		    //Si no lo ingreso, hago else if en vez de else?
-
-		    if(Clase_Ident(sbol->lexema) == CLASFUNC){
+		    else if(Clase_Ident(sbol->lexema) == CLASFUNC){
 		        llamada_funcion(folset);
 		    }
-		    else if(Clase_Ident(sbol->lexema) == CLASVAR){
+		    else(Clase_Ident(sbol->lexema) == CLASVAR){
 		        variable(folset);
 		    }
-		    else{
+
+		    //Tomar nota de aca, si no es funcion, lo mando a variable, si queria usar una funcion, me va a tirar error por variable en vez de funcion
+		    //Informar en el informe que se hace esto
+		    //Ademas, sino, podria traer el match antes del else if y de ahi ver si tiene un ( el lookahead o no y de ahi tratarlo.
+		    //Aca no van a esperar un identificador ni llamada a funcion ni variable
+
+		    /*else{
 		        error_handler(10);
 		        printf("\n\nError en factor -> switch -> case CIDENT -> else \n\n");
 		        //Tendre un caso que entre aca? Revisar
-		    }
+		    }*/ //Despreciado ya que se mando el error a variable
 			break;
 		
 		case CCONS_ENT:
@@ -732,7 +739,7 @@ int constante(set folset)
 			break;
 		
 		default:
-		    tipo = TIPOERROR; //(***-) Este va?
+		    tipo = TIPOERROR;
 			error_handler(33);
 	}
 	test(folset,NADA,63);

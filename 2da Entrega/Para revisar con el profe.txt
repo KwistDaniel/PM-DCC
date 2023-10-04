@@ -4,17 +4,17 @@ declaracion_parametro:
 	-Ver lo de antes de insertarTS(), la info que falta llenar
 
 declarador_init:
-	-lo de controlar el tipo del arreglo?
-	-como le doy la cant de elems? onda el else o asi pelado?
-	-encontre leyendo los errores ese error 74, esta bien ponerlo ahi?
-	-else if((dimension > 0) && cantidad_elementos != dimension)
+	-lo de controlar el tipo del arreglo? REVISADO
+	-como le doy la cant de elems? onda el else o asi pelado? REVISADO
+	-encontre leyendo los errores ese error 74, esta bien ponerlo ahi? REVISADO
+	-else if((dimension > 0) && cantidad_elementos != dimension) REVISADO, es >
 		ver ese control, cambiar != a > creo que es por error 76
 		EL SISTEMA DE TIPOS CREO QUE NO ME DICE NADA DE ESTO
 		En esta parte tmb estoy controlando bien la regla 8? osea que si tiene constante ([8]) y lista de inic sea de mismo tamaño?
 		El tema con la linea de arriba es que si la lista de inic es de mas tamaño, el cartel de error 76 me dice que esta bien
 
 factor:
-	-en case CIDENT, lo doy de alta tipo error si no existe?
+	-en case CIDENT, lo doy de alta tipo error si no existe? REVISADO
 
 
 
@@ -30,17 +30,21 @@ Parte fija:
 	nombre (nombre id) (string)
 	clase (CLASTYPE | CLASVAR | CLASFUN | CLASPAR) (entero 1,2,3,4 respectivo)
 	ptr_tipo (TIPOVOID | TIPOCHAR ....) (es entero, pos en la tabla)
-	cant_byte????
+	cant_byte (es lo que ocupa para el stack de ejecucion) (no nec ahora, es el SIZEOF( cada tipo), en funcion es el retorno)
 	descriptor, puntero a la info adicional de la var, func o par
 
 Parte variable:
 	-param (parametro)
 		tipo_pje ('d' | 'v')REVISAR QUE SEAN ESOS (char, especifica el pasaje)
 		ptero_tipo_base (si es arreglo, guardo el tipo base aca)
-	-sub (funcion)
-		dir_cod ()
-		cant_par ()
+	-sub (subrutina/funcion)
+		dir_cod () (es la direccion de memoria a donde tiene que bifurcar la instruccion) (no es necesario ahora)
+		cant_par (entero) (me indica cuantos tiene la funcion)
 		puntero parametros (ver como se usa)
+
+    ptr_sig = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
+
+
 	-arr (arreglo)
 		ptero_tipo_base (entero, es el ptr_tipo que me dice la base del arreglo) (ver de que tipos se pueden definir)
 		cant_elem (entero que guarda la cant de elementos)
