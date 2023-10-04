@@ -1,5 +1,6 @@
 declaracion_parametro:
-	-La regla 27 no la entiendo bien, que tengo que revisar? o como?
+	-La regla 27 no la entiendo bien, REVISADA
+		Esto es para la llamada, no para la definicion, se verifica despues
 	-Ver lo de antes de insertarTS(), la info que falta llenar
 
 declarador_init:
@@ -14,3 +15,8 @@ declarador_init:
 
 factor:
 	-en case CIDENT, lo doy de alta tipo error si no existe?
+
+
+
+Nota de la profe:
+	Revisar el control que producciones toca, oseea cual se involucra, asi las puedo analizar
