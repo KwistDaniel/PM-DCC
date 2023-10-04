@@ -18,5 +18,30 @@ factor:
 
 
 
+<<<<<<< Updated upstream
 Nota de la profe:
 	Revisar el control que producciones toca, oseea cual se involucra, asi las puedo analizar
+=======
+
+
+Que info guardo en ts?
+
+Parte fija:
+	nombre (nombre id) (string)
+	clase (CLASTYPE | CLASVAR | CLASFUN | CLASPAR) (entero 1,2,3,4 respectivo)
+	ptr_tipo (TIPOVOID | TIPOCHAR ....) (es entero, pos en la tabla)
+	cant_byte????
+	descriptor, puntero a la info adicional de la var, func o par
+
+Parte variable:
+	-param (parametro)
+		tipo_pje ('d' | 'v')REVISAR QUE SEAN ESOS (char, especifica el pasaje)
+		ptero_tipo_base (si es arreglo, guardo el tipo base aca)
+	-sub (funcion)
+		dir_cod ()
+		cant_par ()
+		puntero parametros (ver como se usa)
+	-arr (arreglo)
+		ptero_tipo_base (entero, es el ptr_tipo que me dice la base del arreglo) (ver de que tipos se pueden definir)
+		cant_elem (entero que guarda la cant de elementos)
+>>>>>>> Stashed changes
