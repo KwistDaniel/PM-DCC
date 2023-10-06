@@ -59,6 +59,9 @@ Parte variable:
 
 - Tengo variables globales? Que onda eso? algo en especial?
 - Que onda si tengo 2 main?
+	con esto tmb revisar si cierro el nivel bien con el main, mejor dicho, si lo abro bien
+	me falta algo sobre el main, que como es de nivel 0 no lo estoy controlando
+	debo tener si o si un main?
 
 en declaracion
      cuando veo el errorahndler 73, esta bien ponerle tipo error?
@@ -69,3 +72,5 @@ pq sino donde dice que un parametro no puede ser de tipo void la flasha
 Con esto controlo que no pueda ser (esta bien que cuando le trate de pasar el param en la invocacion no voy a poder, pero me deja definirlo asi y no me tira error
 sera decision de diseño mia marcar eso?
     es en declaracion_parametro, ya lo puse pero lo saco sino
+
+
