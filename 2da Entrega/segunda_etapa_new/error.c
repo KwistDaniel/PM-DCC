@@ -112,6 +112,7 @@ void error_print(int ne)
 		case 98: printf("\t Error %d: Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador\n", ne); break;		
 		case 99: printf("\t Error %d: El identificador debe ser una funcion o un procedimiento\n", ne); break;														
 		case 100:printf("\t Error %d: El identificador debe ser una variable o parametro\n", ne); break;
+		case 101:printf("\t Error %d: La cantidad de valores inicializadores no puede ser 0\n", ne); break;
 	}
 }
 

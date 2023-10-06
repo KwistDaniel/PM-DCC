@@ -54,23 +54,38 @@ Parte variable:
 
 
 
--el -1 no me lo toma como entero, ver lote 2
+-el -1 no me lo toma como entero, ver lote 2 REVISADO
 
 
-- Tengo variables globales? Que onda eso? algo en especial?
 - Que onda si tengo 2 main?
-	con esto tmb revisar si cierro el nivel bien con el main, mejor dicho, si lo abro bien
+	con esto tmb revisar si cierro el nivel bien con el main, mejor dicho, si lo abro bien, 6/10 creo que como es nivel 0 ya esta abierto, pero lo que si si defino un main tengo que pasarle el parametro que lo abra a la declaracion de funcion pq necesito que lo que este adentro sea de otro nivel que el main
 	me falta algo sobre el main, que como es de nivel 0 no lo estoy controlando
-	debo tener si o si un main?
+	debo tener si o si un main? el sistema de tipos dice exactamente una vez, asik debo tener un main parece
+	REVISION: DEBO TENER SI O SI UN MAIN Y SOLO UNO (sin arg etc etc), ver que este en nivel 0 pero lo de dentro no, el flag ese que mando cuando defino funciones
 
 en declaracion
      cuando veo el errorahndler 73, esta bien ponerle tipo error?
      tambien en especificador_declaracion hago lo mismo
+     REVISADO
 
 Sobre error 73, no me dice nada que la definicion de parametros no debe ser void, no controlo eso entonces¿
 pq sino donde dice que un parametro no puede ser de tipo void la flasha
 Con esto controlo que no pueda ser (esta bien que cuando le trate de pasar el param en la invocacion no voy a poder, pero me deja definirlo asi y no me tira error
 sera decision de diseño mia marcar eso?
     es en declaracion_parametro, ya lo puse pero lo saco sino
+    REVISADO ESTAS LINEAS
 
 
+todo: Analizar que si declaro una variable no exista ya en el mismo nivel (Cuando guardo el sbol->lexema pre ident para crearlo (despues del tipo) ver que no exista ya en el mismo nivel, ATENCION CON LOS PARAMETROS: void f(int a, int a){}
+
+todo: revisar que si declaro adentro de un if, while, etc sea otro nivel
+
+todo: ver que si tiro un error en la definicion de algo, darle tipo error a eso que defino. En declarador_init tengo varios casos para dar tipo error creo
+
+todo: actualizar parametros de prototipos en parser.h
+
+
+
+Decir que agregue control de que el parametro no puede ser void pq es una "var" que la estoy dando como void (por lectura del mensaje de error 73)
+
+tambien que agregue el error 101 por lote CE2lote2.c

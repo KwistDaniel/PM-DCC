@@ -10,14 +10,14 @@ int last_call=0;
 
 /*********** prototipos *************/
 
-void unidad_traduccion();
+void unidad_traduccion(set);
 void declaraciones();
 int especificador_tipo();
 void especificador_declaracion();
 void definicion_funcion();
 void declaracion_variable();
-int lista_declaraciones_param();
-void declaracion_parametro();
+int lista_declaraciones_param(set, int);
+void declaracion_parametro(set, int, tipo_inf_res*);
 void declarador_init();
 void lista_declaraciones_init();
 int lista_inicializadores();

@@ -171,7 +171,7 @@ int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion 
 		match(CCOMA,64);
 		ptr_inf_res->ptr_sig = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
 		ptr_inf_res = ptr_inf_res->ptr_sig;
-		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
+		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF, ptr_inf_res);
 		cantidad_parametros++;
 	}
 
@@ -185,7 +185,7 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 
 	if(tipo == TIPOVOID){
 	    tipo = TIPOERROR;
-	    error_handler(73); ////Una variable, un parametro o un arreglo no pueden ser de tipo void
+	    error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
 	}
 
     int control28 = 0;
@@ -290,21 +290,25 @@ void declarador_init(set folset, int tipo)
 		    inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
 		    // (***-) Aca puedo controlar que sea float,int o char para regla 7???
 			match(CCOR_ABR, 35);
-			
+
 			if(lookahead_in(CCONS_ENT)){
 			    dimension = atoi(sbol->lexema);
 			    if(dimension <= 0){
 			        error_handler(75); //La cantidad de elementos de un arreglo puede estar dada por un número natural (es decir, mayor a 0) y/o a través de la inicialización del mismo.
 
 			    }
-			    ////*****//// (***-) Cual de las 2 uso? el else o le asigno nomas??
-			    //inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
-			    else{inf_id->desc.part_var.arr.cant_elem = atoi(sbol->lexema);}
+			    else{
+
+			        inf_id->desc.part_var.arr.cant_elem = atoi(sbol->lexema);
+                }
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
 			}
 			else if(lookahead_in(CCOR_CIE)){
 			    sin_dimension = 1;
 			}
+			else{
+                error_handler(74); //La cdad. de elementos de un arreglo debe ser una cte. entera en la declaracion
+            }
 
 			match(CCOR_CIE, 22);
 
@@ -315,6 +319,10 @@ void declarador_init(set folset, int tipo)
 				match(CLLA_ABR, 24);
 				cantidad_elementos = lista_inicializadores(folset | CLLA_CIE, tipo);
 
+				if (cantidad_elementos == 0){
+                    error_handler(101); //La cantidad de valores inicializadores no puede ser 0
+                }
+
 				if(sin_dimension == 1){
 				    inf_id->desc.part_var.arr.cant_elem = cantidad_elementos;
 				}
@@ -324,10 +332,6 @@ void declarador_init(set folset, int tipo)
 				else{
 				    inf_id->desc.part_var.arr.cant_elem = dimension;
 				}
-				//// !!!! //Else error 74???? (***-) hace falta aca? va en otro lado?
-				//HACER ESTO: SI NO VINO CONSTANTE ENTERA NI LISTA DE INICIALIZADORES VA ERROR 74
-				//VER QUE VAYA DONDE VA
-
 				match(CLLA_CIE, 25);
 			}
 			break;
@@ -342,10 +346,11 @@ int lista_inicializadores(set folset, int tipo_base)
 {
     int tipo_constante, cantidad_elementos = 0;
 	tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
-	cantidad_elementos++;
+	if (tipo_constante != 5){
+	    cantidad_elementos++;
+	}
 
 	if(tipo_constante != tipo_base){
-	    printf("\npri");
 	    printf("\nTipo constante: %d" , tipo_constante);
 	    printf("\nTipo base: %d" , tipo_base);
 	    error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
