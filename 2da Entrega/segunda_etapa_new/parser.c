@@ -2,6 +2,11 @@
 #include "parser.h"
 
 
+//VER:
+//cuando llamo a especificador_tipo usar el tipo
+//ver que las funciones que devuelvan algo, mas que nada tipo, lo asignen, consulten o pasen a donde corresponda
+//
+
 int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR;
 
 enum procedimientos {
@@ -115,6 +120,10 @@ void especificador_declaracion(set folset, int tipo)
 		case CCOR_ABR:
 		case CCOMA:
 		case CPYCOMA:
+		    if(tipo == TIPOVOID){
+		        tipo = TIPOERROR;
+		        error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
+		    }
 			declaracion_variable(folset,tipo);
 			break;
 		
@@ -130,8 +139,6 @@ void definicion_funcion(set folset,int tipo)
     inf_id->clase = CLASFUNC;
     int posicionTSF = insertarTS();
     int cantidad_parametros = 0;
-
-    //RECORDAR PARAMETROS (insertar ts devuelve pos donde inserta, guardar eso en una variable para los parametros)
 	match(CPAR_ABR, 20);
 	pushTB();
 
@@ -151,15 +158,20 @@ int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion 
 {
     int cantidad_parametros = 0;
 
-	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
+    tipo_inf_res *ptr_inf_res;
+    ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
+    ptr_inf_res = ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res;
+
+	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF, ptr_inf_res);
 
     cantidad_parametros++;
 
 	while(lookahead_in(CCOMA | first(DECLARACION_PARAMETRO)))
 	{
 		match(CCOMA,64);
+		ptr_inf_res->ptr_sig = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
+		ptr_inf_res = ptr_inf_res->ptr_sig;
 		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF);
-		//Falta hacer algo mas? por donde estan los parametros
 		cantidad_parametros++;
 	}
 
@@ -167,26 +179,30 @@ int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion 
 }
 
 
-void declaracion_parametro(set folset, int posicionTSF)
+void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_res)
 {
 	int tipo = especificador_tipo(folset | CAMPER | CIDENT | CCOR_ABR | CCOR_CIE);
+
+	if(tipo == TIPOVOID){
+	    tipo = TIPOERROR;
+	    error_handler(73); ////Una variable, un parametro o un arreglo no pueden ser de tipo void
+	}
 
     int control28 = 0;
 
 	if(lookahead_in(CAMPER)){
 	    scanner();
-	    //inf_id->desc.param.tipo_pje = 'd';
 	    inf_id->desc.part_var.param.tipo_pje = 'd';
+	    ptr_inf_res->tipo_pje = 'd';
 	    control28 = 1; //Se uso el &, controlar que no venga un arreglo (28)
 	}
 	else{
-	    //inf_id->desc.param.tipo_pje = 'v';
 	    inf_id->desc.part_var.param.tipo_pje = 'v';
+	    ptr_inf_res->tipo_pje = 'v';
 	}
 
 	strcpy(inf_id->nbre,sbol->lexema);
 	inf_id->clase = CLASPAR;
-
 	match(CIDENT, 17);
 
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
@@ -196,39 +212,38 @@ void declaracion_parametro(set folset, int posicionTSF)
 	    }
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
-		//inf_id->desc.param.ptero_tipo_base = tipo;
 		inf_id->desc.part_var.param.ptero_tipo_base = tipo;
 		inf_id->ptr_tipo = TIPOARREGLO;
+		ptr_inf_res->ptero_tipo = TIPOARREGLO;
+		ptr_inf_res->ptero_tipo_base = tipo;
 	}
 	else{
 	    inf_id->ptr_tipo = tipo;
+	    ptr_inf_res->ptero_tipo = tipo;
 	}
+	insertarTS(); //.Insercion del parametro.
 
-
-    //Ver con el profe como hago para poner los datos que faltan al parametro
-    //Osea tengo que usar la info que tengo de posicionTSF para llenar la info de la func y eso
-
-	insertarTS();//Insert de tipo parametro
-	//Actualizar la ts
-	ts[posicionTSF]-> o . ,....
 	//Ya estoy sumando la cantidad de parametros mas arriba
 	test(folset,NADA,45);
 }
 
 
-void lista_declaraciones_init(set folset)
+void lista_declaraciones_init(set folset, int tipo)
 {
 	test(first(LISTA_DECLARACIONES_INIT),folset | first(DECLARADOR_INIT) | CCOMA,46);
 
+    strcpy(inf_id->nbre,sbol->lexema);
+
 	match(CIDENT, 17);
 
-	declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
+	declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT), tipo);
 
 	while(lookahead_in(CCOMA | CIDENT | first(DECLARADOR_INIT)))
 	{
 		match(CCOMA,64);
+		strcpy(inf_id->nbre,sbol->lexema);
 		match(CIDENT, 17);
-		declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT));
+		declarador_init(folset | CCOMA | CIDENT | first(DECLARADOR_INIT), tipo);
 	}
 }
 
@@ -240,7 +255,7 @@ void declaracion_variable(set folset, int tipo)
 	if(lookahead_in(CCOMA | first(LISTA_DECLARACIONES_INIT)))
 	{
 		match(CCOMA,64);
-		lista_declaraciones_init(folset | CPYCOMA);
+		lista_declaraciones_init(folset | CPYCOMA,tipo);
 	}
 
 	match(CPYCOMA, 23);
@@ -284,16 +299,14 @@ void declarador_init(set folset, int tipo)
 			    }
 			    ////*****//// (***-) Cual de las 2 uso? el else o le asigno nomas??
 			    //inf_id->desc.arr.cant_elem = atoi(sbol->lexema);
-			    else{inf_id->desc.arr.cant_elem = atoi(sbol->lexema);}
+			    else{inf_id->desc.part_var.arr.cant_elem = atoi(sbol->lexema);}
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
 			}
 			else if(lookahead_in(CCOR_CIE)){
 			    sin_dimension = 1;
 			}
 
-
 			match(CCOR_CIE, 22);
-
 
             int cantidad_elementos = 0;
 			if(lookahead_in(CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES)))
@@ -302,27 +315,22 @@ void declarador_init(set folset, int tipo)
 				match(CLLA_ABR, 24);
 				cantidad_elementos = lista_inicializadores(folset | CLLA_CIE, tipo);
 
-				if(sin_dimension){
+				if(sin_dimension == 1){
 				    inf_id->desc.part_var.arr.cant_elem = cantidad_elementos;
 				}
-				else if((dimension > 0) && cantidad_elementos > dimension){
+				else if((dimension > 0) && (cantidad_elementos > dimension)){
 				    error_handler(76); // La cantidad de valores inicializadores debe ser igual o menor al tamaño del arreglo declarado
 				}
 				else{
-				    inf_id->desc.part_var-arr-cant_elem = dimension;
+				    inf_id->desc.part_var.arr.cant_elem = dimension;
 				}
-				//// !!!! //Else error 74???? (***-) hace falta aca? va en otro lado? SI NO VINO CONSTANTE ENTERA NI LISTA DE INICIALIZADORES VA ERROR 74
+				//// !!!! //Else error 74???? (***-) hace falta aca? va en otro lado?
+				//HACER ESTO: SI NO VINO CONSTANTE ENTERA NI LISTA DE INICIALIZADORES VA ERROR 74
 				//VER QUE VAYA DONDE VA
 
 				match(CLLA_CIE, 25);
 			}
-
-
-
-
 			break;
-
-
 	}
 	inf_id->clase = CLASVAR;
 	insertarTS();
@@ -337,6 +345,9 @@ int lista_inicializadores(set folset, int tipo_base)
 	cantidad_elementos++;
 
 	if(tipo_constante != tipo_base){
+	    printf("\npri");
+	    printf("\nTipo constante: %d" , tipo_constante);
+	    printf("\nTipo base: %d" , tipo_base);
 	    error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
 	}
 
@@ -346,6 +357,9 @@ int lista_inicializadores(set folset, int tipo_base)
 		tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
 
 	    if(tipo_constante != tipo_base){
+            printf("\nif while");
+	        printf("\nTipo constante: %d" , tipo_constante);
+            printf("\nTipo base: %d" , tipo_base);
             error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
         }
 		cantidad_elementos++;
@@ -371,6 +385,8 @@ void proposicion_compuesta(set folset,int abrir_bloque)
 		lista_proposiciones(folset | CLLA_CIE);
 
 	match(CLLA_CIE, 25);
+	pop_nivel();
+    //O es POPTB?
 	test(folset,NADA,50);
 }
 
@@ -386,9 +402,14 @@ void lista_declaraciones(set folset)
 
 void declaracion(set folset)
 {
-	especificador_tipo(folset | first(LISTA_DECLARACIONES_INIT) | CPYCOMA);
+	int tipo = especificador_tipo(folset | first(LISTA_DECLARACIONES_INIT) | CPYCOMA);
 
-	lista_declaraciones_init(folset | CPYCOMA);
+	if(tipo == TIPOVOID){
+	    tipo = TIPOERROR;
+	    error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
+	}
+
+	lista_declaraciones_init(folset | CPYCOMA,tipo);
 
 	match(CPYCOMA, 23);
 	test(folset,NADA,51);
@@ -412,7 +433,7 @@ void proposicion(set folset)
 	switch(lookahead())
 	{
 		case CLLA_ABR:
-			proposicion_compuesta(folset);
+			proposicion_compuesta(folset,1);
 			break;
 		
 		case CWHILE:
@@ -627,7 +648,7 @@ void factor(set folset)
 		    else if(Clase_Ident(sbol->lexema) == CLASFUNC){
 		        llamada_funcion(folset);
 		    }
-		    else(Clase_Ident(sbol->lexema) == CLASVAR){
+		    else{
 		        variable(folset);
 		    }
 

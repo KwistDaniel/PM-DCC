@@ -42,10 +42,30 @@ Parte variable:
 		cant_par (entero) (me indica cuantos tiene la funcion)
 		puntero parametros (ver como se usa)
 
-    ptr_sig = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
-
 
 	-arr (arreglo)
 		ptero_tipo_base (entero, es el ptr_tipo que me dice la base del arreglo) (ver de que tipos se pueden definir)
 		cant_elem (entero que guarda la cant de elementos)
 >>>>>>> Stashed changes
+
+
+
+
+
+
+
+-el -1 no me lo toma como entero, ver lote 2
+
+
+- Tengo variables globales? Que onda eso? algo en especial?
+- Que onda si tengo 2 main?
+
+en declaracion
+     cuando veo el errorahndler 73, esta bien ponerle tipo error?
+     tambien en especificador_declaracion hago lo mismo
+
+Sobre error 73, no me dice nada que la definicion de parametros no debe ser void, no controlo eso entonces¿
+pq sino donde dice que un parametro no puede ser de tipo void la flasha
+Con esto controlo que no pueda ser (esta bien que cuando le trate de pasar el param en la invocacion no voy a poder, pero me deja definirlo asi y no me tira error
+sera decision de diseño mia marcar eso?
+    es en declaracion_parametro, ya lo puse pero lo saco sino
