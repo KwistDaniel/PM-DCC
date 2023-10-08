@@ -214,18 +214,12 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 	    error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
 	}
 
-    int control28 = 0;
+    int control28 = 0, flag28 = 0;
 
 	if(lookahead_in(CAMPER)){
 	    scanner();
-	    inf_id->desc.part_var.param.tipo_pje = 'd';
-	    ptr_inf_res->tipo_pje = 'd';
 	    control28 = 1; //Se uso el &, controlar que no venga un arreglo (28)
-	}
-	else{
-	    inf_id->desc.part_var.param.tipo_pje = 'v';
-	    ptr_inf_res->tipo_pje = 'v';
-	}
+    }
 
 	strcpy(inf_id->nbre,sbol->lexema);
 	inf_id->clase = CLASPAR;
@@ -233,20 +227,44 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
-	    if(control28){
+	    if(control28 == 1){
+	        flag28 = 1;
 	        error_handler(92); //<tipo> & <nombre arreglo> []
+	    }
+	    else{
+	        control28 = 1; //Utilizo este flag para saber que tengo un arreglo
 	    }
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
-		inf_id->desc.part_var.param.ptero_tipo_base = tipo;
-		inf_id->ptr_tipo = TIPOARREGLO;
-		ptr_inf_res->ptero_tipo = TIPOARREGLO;
-		ptr_inf_res->ptero_tipo_base = tipo;
+	}
+	if(control28 == 1){
+	    if(flag28 == 1){
+            inf_id->ptr_tipo = TIPOERROR;
+            inf_id->desc.part_var.param.ptero_tipo_base = TIPOERROR; //Creo que no hace falta
+            ptr_inf_res->ptero_tipo = TIPOERROR;
+            ptr_inf_res->ptero_tipo_base = TIPOERROR; //Creo que no hace falta
+	    }
+	    else{
+	        inf_id->desc.part_var.param.ptero_tipo_base = tipo;
+            inf_id->ptr_tipo = TIPOARREGLO;
+            ptr_inf_res->ptero_tipo = TIPOARREGLO;
+            ptr_inf_res->ptero_tipo_base = tipo;
+	    }
 	}
 	else{
 	    inf_id->ptr_tipo = tipo;
 	    ptr_inf_res->ptero_tipo = tipo;
 	}
+	if(control28 == 1){
+	    //Note that the formal parameter is specified as an array reference using the [] notation, but this notation is not used when an array is passed as an actual parameter.
+	    //func(a); no uso el [] pq lo invoco con el nombre
+	    inf_id->desc.part_var.param.tipo_pje = 'd';
+        ptr_inf_res->tipo_pje = 'd';
+    }
+    else{
+        inf_id->desc.part_var.param.tipo_pje = 'v';
+        ptr_inf_res->tipo_pje = 'v';
+    }
 	insertarTS(); //.Insercion del parametro.
 
 	//Ya estoy sumando la cantidad de parametros mas arriba
@@ -919,7 +937,6 @@ int lista_expresiones(set folset, int posicionTSF)
 	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 	cantidad_parametros_actuales++;
 
-
 	if(tipo_parametro_actual == -11){
 	    tipo_parametro_actual = TIPOARREGLO;
 	    tipo_parametro_actual_base = TIPOINT;
@@ -936,16 +953,14 @@ int lista_expresiones(set folset, int posicionTSF)
         tipo_parametro_actual_base = -1;
     }
 
-	if((tipo_parametro_formal != tipo_parametro_actual) && (tipo_parametro_formal_base != tipo_parametro_actual_base)){
+	if((tipo_parametro_formal != tipo_parametro_actual) || (tipo_parametro_formal_base != tipo_parametro_actual_base)){
 	    flag = 1;
 	}
 
-	if((tipo_parametro_actual == TIPOARREGLO) && (ptr_inf_res->tipo_pje != 'v')){
-        error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
-    }
-
 	if(tipo_parametro_actual == TIPOARREGLO){
-
+        if(ptr_inf_res->tipo_pje != 'd'){ //8/10 DECIDI CAMBIAR ESTE CONTROL DE 'v' a 'd' pq no tiene sentido preguntar por v, un arreglo se pasa por direccion, no por valor, si lo inserto en TS como un pasaje por valor esta mal BORRAR ATENCION Osea, para mi esta mal el 27, tendria que decir direccion en vez de valor
+            error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
+        }
 	}
 
 	while(lookahead_in(CCOMA | first(EXPRESION)))
@@ -968,23 +983,23 @@ int lista_expresiones(set folset, int posicionTSF)
 		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 		cantidad_parametros_actuales++;
 
-        	if(tipo_parametro_actual == -11){
-        	    tipo_parametro_actual = TIPOARREGLO;
-        	    tipo_parametro_actual_base = TIPOINT;
-        	}
-        	else if(tipo_parametro_actual == -12){
-                tipo_parametro_actual = TIPOARREGLO;
-                tipo_parametro_actual_base = TIPOFLOAT;
-            }
-            else if(tipo_parametro_actual == -12){
-                tipo_parametro_actual = TIPOARREGLO;
-                tipo_parametro_actual_base = TIPOCHAR;
-            }
-            else{
-                tipo_parametro_actual_base = -1;
-            }
+        if(tipo_parametro_actual == -11){
+            tipo_parametro_actual = TIPOARREGLO;
+            tipo_parametro_actual_base = TIPOINT;
+        }
+        else if(tipo_parametro_actual == -12){
+            tipo_parametro_actual = TIPOARREGLO;
+            tipo_parametro_actual_base = TIPOFLOAT;
+        }
+        else if(tipo_parametro_actual == -12){
+            tipo_parametro_actual = TIPOARREGLO;
+            tipo_parametro_actual_base = TIPOCHAR;
+        }
+        else{
+            tipo_parametro_actual_base = -1;
+        }
 
-        if((tipo_parametro_formal != tipo_parametro_actual) && (tipo_parametro_formal_base != tipo_parametro_actual_base)){
+        if((tipo_parametro_formal != tipo_parametro_actual) || (tipo_parametro_formal_base != tipo_parametro_actual_base)){
             flag = 1;
         }
 	}

@@ -15,23 +15,19 @@ void func3(int a[]){
 
 void main(){
     int a[1];
-    func(a);
     int b;
     int c = 0;
     char d;
+    func2(d);
+    func(a);
+    func(a[]);
+    func2();
+    func2(b);
+    func2(b,c);
     if(c == 0){
         b[1] = 1;
         a = 0;
     }
-
-
-    func3(a);
-    # no me deja pasar el parametro a solito #
-    func2();
-    func2(b);
-    func2(b,c);
-    func2(d);
-
 }
 
 # Linea comentario #
