@@ -107,7 +107,7 @@ int especificador_tipo(set folset)
 			
 		default:
 		    posicionTipo = TIPOERROR;
-			error_handler(18);
+			error_handler(18); //Tipo no definido
 	}
     test(folset, NADA, 42);
     return (posicionTipo);
@@ -149,9 +149,9 @@ void definicion_funcion(set folset,int tipo)
             tipo = TIPOERROR;
             error_handler(102); //La funcion main() ya se encuentra declarada
         }
-        else if(tipo != TIPOVOID){ //Si el tipo de retorno es distinto a void
-            error_handler(85); //El tipo de la funcion main() debe ser void
+        if(tipo != TIPOVOID){ //Si el tipo de retorno es distinto a void
             tipo = TIPOERROR;
+            error_handler(85); //El tipo de la funcion main() debe ser void
         }
     }
     inf_id->ptr_tipo = tipo;
@@ -209,10 +209,15 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 {
 	int tipo = especificador_tipo(folset | CAMPER | CIDENT | CCOR_ABR | CCOR_CIE);
 
+    if(tipo == TIPOERROR){
+        error_handler(41); //Simbolo inesperado o falta especificador de tipo
+    }
+
 	if(tipo == TIPOVOID){
 	    tipo = TIPOERROR;
 	    error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
 	}
+
 
     int control28 = 0, flag28 = 0;
 
@@ -229,7 +234,7 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 	{
 	    if(control28 == 1){
 	        flag28 = 1;
-	        error_handler(92); //<tipo> & <nombre arreglo> []
+	        error_handler(92); //No se permite <tipo> & <id_arreglo> [] en la definicion de un parametro
 	    }
 	    else{
 	        control28 = 1; //Utilizo este flag para saber que tengo un arreglo
@@ -345,13 +350,8 @@ void declarador_init(set folset, int tipo)
 		        inf_id->ptr_tipo = TIPOARREGLO;
 		        inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
 		    }
-		    else{
-                printf("\n\n");
-                printf("\n\n");
-                printf("DECLARADOR_INIT VER QUE NO ESTE REPETIDO ESTE ERROR");
-                printf("\n\n");
-                printf("\n\n");
-		        inf_id->ptr_tipo = TIPOERROR;
+		    else if(tipo == TIPOARREGLO){
+		        inf_id->ptr_tipo = TIPOERROR; //CREO QUE NO TIENE SENTIDO BORRAR ESTE ELSE IF Y EL ERROR 103
 		        error_handler(103); //Un arreglo debe ser de tipo simple
 		    }
 
@@ -546,11 +546,17 @@ void proposicion(set folset)
 
 void proposicion_iteracion(set folset)
 {
+    int tipo;
+
 	match(CWHILE, 27);
 
 	match(CPAR_ABR, 20);
 
-	expresion(folset | CPAR_CIE | first(PROPOSICION),1);
+	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION),1);
+	printf("\nTIPO: %d \n",tipo);
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+        error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
+    }
 
 	match(CPAR_CIE, 21);
 
@@ -560,11 +566,17 @@ void proposicion_iteracion(set folset)
 
 void proposicion_seleccion(set folset)
 {
+    int tipo;
+
 	match(CIF, 28);
 
 	match(CPAR_ABR, 20);
 
-	expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
+	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
+	printf("\nTIPO: %d \n",tipo);
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+        error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
+    }
 
 	match(CPAR_CIE, 21);
 
@@ -580,6 +592,7 @@ void proposicion_seleccion(set folset)
 
 void proposicion_e_s(set folset)
 {
+    int tipo;
 	switch(lookahead())
 	{
 	    case CSHR:
@@ -587,13 +600,27 @@ void proposicion_e_s(set folset)
 			match(CIN,29);
 			
 			match(CSHR, 30);
-			
-			variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
+			if(en_tabla(sbol->lexema) == NIL){ //COMPARO CON NIL PQ EN DEFINICION NIL ES -1
+                error_handler(71); //Identificador no declarado
+                strcpy(inf_id->nbre,sbol->lexema);
+                inf_id->ptr_tipo = TIPOERROR;
+                insertarTS();
+                // (***-) Ver si falta mas info que poner
+            }
+			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
+            printf("\nTIPO: %d \n",tipo);
+			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+			    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+			}
 			
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
 				match(CSHR,30);
-				variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
+				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
+				printf("\nTIPO: %d \n",tipo);
+				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+                    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+                }
 			}
 
 			match(CPYCOMA, 23);
@@ -606,12 +633,21 @@ void proposicion_e_s(set folset)
 
 			match(CSHL, 31);
 			
-			expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
-
+			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
+			printf("\nTIPO: %d \n",tipo);
+			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){
+                error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+            }
+            printf("\nSTRING ES TIPO: %d \n", STRING);
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
-				expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1);
+				tipo = expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1);
+				printf("\nTIPO: %d \n",tipo);
+
+				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){
+                    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+                }
 			}
 
 			match(CPYCOMA, 23);
@@ -663,24 +699,13 @@ int expresion(set folset, int necesito_indice)
 				    tipo = TIPOERROR;
 				    error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
 				}
-				else{
-				    if(tipo == TIPOARREGLO){ //Por si devuelve tipo arreglo, en si deberia entrar por los 3 de abajo
+				else{ //No entra aca porque solicito que para acceder a un arreglo se utilice un indice
+				    if((tipo == TIPOARREGLO) || (tipo == ARRINT) || (tipo == ARRFLOAT) || (tipo == ARRCHAR))
+				    { //Por si devuelve tipo arreglo, en si deberia entrar por los 3 de abajo
 				        tipo = TIPOERROR;
                         error_handler(81); //No se permite la asignacion de arreglos como un todo
 				    }
-				    else if(tipo == ARRINT){
-				        tipo = TIPOERROR;
-				        error_handler(81); //No se permite la asignacion de arreglos como un todo
-				    }
-				    else if(tipo == ARRFLOAT){
-				        tipo = TIPOERROR;
-                        error_handler(81); //No se permite la asignacion de arreglos como un todo
-				    }
-				    else if(tipo == ARRCHAR){
-				        tipo = TIPOERROR;
-                        error_handler(81); //No se permite la asignacion de arreglos como un todo
-				    }
-				    else{ //Hecho por las dudas en caso que quiera asignar TIPOERROR o TIPOVOID x ej
+				    else{ //Hecho por las dudas en caso que quiera asignar TIPOERROR o TIPOVOID x ej, desconozco si existe la posibilidad que pase
 				        if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
 				            tipo = TIPOERROR;
 				            error_handler(104); //Tipo de la asignacion no valido

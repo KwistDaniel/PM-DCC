@@ -1,28 +1,26 @@
 # Parte 2 #
-# Lote con 2 error #
-# Variable ya definida #
-# Arreglo, variable y parametro tipo void #
+# Funcion main no definida #
+# Parametro con & y [] al mismo tiempo #
+# Invocaciones con tipos y cantidades distintas de parametros #
 
+int a;
 int b;
 
-void aux(void z){
-    int a,c;
-    int a;
-    char b;
-    if(c == 3){
-        int b;
-    }
-    void y[3];
-    void x;
-    int f = 5;
+void func1(int &a[],int b){
+
 }
 
-int faux(int a, int b, int c){
-    a=b;
+void func2(int a[],int b[]){
+
 }
 
-void main(){
-    aux(b);
+void func3(int a){}
+
+void func4(){
+    int a, b[];
+    char c;
+    func2(b,b[1]);
+    func3(c,a);
 }
 
 # Linea comentario #

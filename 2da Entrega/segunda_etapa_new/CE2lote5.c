@@ -1,9 +1,13 @@
 # Parte 2 #
-# Lote con errores de main #
-# definida con tipo != void #
+# Control de I/O #
 
-int main(){
-    return 0;
+void main(){
+    int a;
+    int c[2];
+    cin >> b;
+    cin >> a;
+    cin >> c[1];
+    cout << "hola";
 }
 
 # Linea comentario #

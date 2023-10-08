@@ -96,6 +96,10 @@ tambien agregue error 102 porque en error.c dice que main no puede ser void, per
 
 7/10: Que hago con las variables y funciones repetidas? se insertan o no? k onda?
 
+proposicion_e_s y proposicion iteracion y proposicion seleccion
+    Cuando dice que solo de tipo int, float y char, si es un valor de un arreglo tmb se puede? Ahi agrego simplemente al if para ver los tipos -11,-12,-13 y listo
+    sobre e_s La 19 tambien en cout me deja usar string me imagino, por la 15
+
 
 proposicion_compuesta
     era pop_nivel?
@@ -112,3 +116,8 @@ definicion_funcion
 
 
     EN DECLARADOR INIT ME FALTAN COSAS
+
+
+
+Ver lo de la regla 11 que puse en el informe, ejemplo es el CE2lote4.c
+Lo que pasa es que al pasar el flag que necesito pedir un indice, le solicito que me de el elemento, por lo que no me deja hacer la 11 por estar controlando otra cosa

@@ -1,20 +1,16 @@
 # Parte 2 #
-# Lote con errores de main #
-# definida mas de 1 vez #
+# Control de iteracion y seleccion #
 
-void main(){
-    int a;
-    int b;
-    int c = 0;
-    c = a + b;
+void f1(){
 }
 
 void main(){
-    int a = 1;
-    if(a == 1){
-        int a;
-        a = 0;
-    }
+    int a[1];
+    if(a){}
+    while(a){}
+    if(a[1]){}
+    while(a[1]){}
+    if(f1()){}
 }
 
 # Linea comentario #
