@@ -8,6 +8,7 @@
 //
 
 int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR;
+int ARRINT = -11, ARRFLOAT = -12, ARRCHAR = -13, STRING = -14;
 
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
@@ -31,9 +32,15 @@ int main(int argc, char *argv[])
     TIPOARREGLO = en_tabla("TIPOARREGLO");
     TIPOERROR = en_tabla("TIPOERROR");
 
+
+
     pushTB();//Bloq 0
 	
 	unidad_traduccion(CEOF);
+
+    if(en_tabla("main") == NIL){ //Y ya esta en tabla
+        error_handler(84); //Falta declarar la funcion main()
+    }
 
 	pop_nivel();
 
@@ -135,12 +142,25 @@ void especificador_declaracion(set folset, int tipo)
 
 void definicion_funcion(set folset,int tipo)
 {
+    int insertando_main = 0;
+    if(strcmp(inf_id->nbre,"main") == 0){ //Si el id de la funcion es main
+        insertando_main = 1;
+        if(en_tabla("main") != NIL){ //Y ya esta en tabla
+            tipo = TIPOERROR;
+            error_handler(102); //La funcion main() ya se encuentra declarada
+        }
+        else if(tipo != TIPOVOID){ //Si el tipo de retorno es distinto a void
+            error_handler(85); //El tipo de la funcion main() debe ser void
+            tipo = TIPOERROR;
+        }
+    }
     inf_id->ptr_tipo = tipo;
     inf_id->clase = CLASFUNC;
     int posicionTSF = insertarTS();
     int cantidad_parametros = 0;
 	match(CPAR_ABR, 20);
-	pushTB();
+
+    pushTB(); //Aumento nivel pq los parametros y variables son de mayor nivel
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		cantidad_parametros = lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
@@ -148,6 +168,12 @@ void definicion_funcion(set folset,int tipo)
 	match(CPAR_CIE, 21);
 
 	//Ir a la pos en la TS y darle el num de params que conte
+	if(insertando_main == 1){ //Si el id de la funcion es main
+	    if(cantidad_parametros != 0){ //Si main tiene parametros
+	        ts[posicionTSF].ets->ptr_tipo = TIPOERROR;
+	        error_handler(86); //La funcion main() no lleva argumento
+	    }
+	}
 	ts[posicionTSF].ets->desc.part_var.sub.cant_par = cantidad_parametros;
 
 	proposicion_compuesta(folset,0); //paso 0 para indicar que no hay que hacer un pushTB();
@@ -267,28 +293,50 @@ void declarador_init(set folset, int tipo)
 {
 	test(first(DECLARADOR_INIT) | folset, CASIGNAC | CCONS_FLO | CCONS_CAR | CCOR_ABR | CCOR_CIE | CLLA_ABR | CLLA_CIE,47); //Se quito el CCON_ENT y donde aparece (first const y first lis in) (!)
 
-	int dimension = -1, sin_dimension = -1;
+	int dimension = -1, sin_dimension = -1, tipo2;
+
+    inf_id->ptr_tipo = tipo;
 
 	switch(lookahead())
 	{
 	    case CCONS_FLO:
 	    case CCONS_CAR:
 		case CASIGNAC:
-		    inf_id->ptr_tipo = tipo;
 			match(CASIGNAC,66);
-			//falta algo? X la asignacion digo
-			constante(folset);
+			tipo2 = constante(folset);
+			if(tipo != tipo2){
+			    //printf("\n\n");
+			    //printf("\n\n");
+			    //printf("REVISAR SI ES A UN ARREGLO QUE SEAN MISMO TIPO BASE");
+			    //printf("\n\n");
+			    //printf("\n\n");
+			    //printf("Tipo: %d \n",tipo);
+			    //printf("Tipo2: %d \n",tipo2);
+			    // BORRAR
+                tipo = TIPOERROR;
+                error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
+            }
+			inf_id->ptr_tipo = tipo;
 			break;
 
         case CLLA_ABR:
         case CLLA_CIE:
         case CCOR_CIE:
 		case CCOR_ABR:
-		    inf_id->ptr_tipo = TIPOARREGLO;
-		    //Controlar que tipo sea char int o float asi cumplo regla 7 aca.
-		    //VER DONDE REVISO REGLA 5
-		    inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
-		    // (***-) Aca puedo controlar que sea float,int o char para regla 7???
+		    if((tipo == TIPOINT) || (tipo == TIPOFLOAT) || (tipo == TIPOCHAR)){
+		        inf_id->ptr_tipo = TIPOARREGLO;
+		        inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
+		    }
+		    else{
+                printf("\n\n");
+                printf("\n\n");
+                printf("DECLARADOR_INIT VER QUE NO ESTE REPETIDO ESTE ERROR");
+                printf("\n\n");
+                printf("\n\n");
+		        inf_id->ptr_tipo = TIPOERROR;
+		        error_handler(103); //Un arreglo debe ser de tipo simple
+		    }
+
 			match(CCOR_ABR, 35);
 
 			if(lookahead_in(CCONS_ENT)){
@@ -351,8 +399,8 @@ int lista_inicializadores(set folset, int tipo_base)
 	}
 
 	if(tipo_constante != tipo_base){
-	    printf("\nTipo constante: %d" , tipo_constante);
-	    printf("\nTipo base: %d" , tipo_base);
+	    //printf("\nTipo constante: %d" , tipo_constante); CONTROLES POR ALGO QUE FALLABA, BORRAR
+	    //printf("\nTipo base: %d" , tipo_base); CONTROLES POR ALGO QUE FALLABA, BORRAR
 	    error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
 	}
 
@@ -362,9 +410,9 @@ int lista_inicializadores(set folset, int tipo_base)
 		tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
 
 	    if(tipo_constante != tipo_base){
-            printf("\nif while");
-	        printf("\nTipo constante: %d" , tipo_constante);
-            printf("\nTipo base: %d" , tipo_base);
+            //printf("\nif while"); CONTROLES POR ALGO QUE FALLABA, BORRAR
+	        //printf("\nTipo constante: %d" , tipo_constante); CONTROLES POR ALGO QUE FALLABA, BORRAR
+            //printf("\nTipo base: %d" , tipo_base); CONTROLES POR ALGO QUE FALLABA, BORRAR
             error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
         }
 		cantidad_elementos++;
@@ -391,7 +439,6 @@ void proposicion_compuesta(set folset,int abrir_bloque)
 
 	match(CLLA_CIE, 25);
 	pop_nivel();
-    //O es POPTB?
 	test(folset,NADA,50);
 }
 
@@ -485,7 +532,7 @@ void proposicion_iteracion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	expresion(folset | CPAR_CIE | first(PROPOSICION));
+	expresion(folset | CPAR_CIE | first(PROPOSICION),1);
 
 	match(CPAR_CIE, 21);
 
@@ -499,7 +546,7 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE);
+	expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
 
 	match(CPAR_CIE, 21);
 
@@ -523,12 +570,12 @@ void proposicion_e_s(set folset)
 			
 			match(CSHR, 30);
 			
-			variable(folset | CSHR | first(VARIABLE) | CPYCOMA);
+			variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
 			
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
 				match(CSHR,30);
-				variable(folset | CPYCOMA | CSHR | first(VARIABLE));
+				variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
 			}
 
 			match(CPYCOMA, 23);
@@ -541,12 +588,12 @@ void proposicion_e_s(set folset)
 
 			match(CSHL, 31);
 			
-			expresion(folset | CSHL | first(EXPRESION) | CPYCOMA);
+			expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
 
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
-				expresion(folset | CPYCOMA | CSHL | first(EXPRESION));
+				expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1);
 			}
 
 			match(CPYCOMA, 23);
@@ -564,7 +611,7 @@ void proposicion_retorno(set folset)
 {
 	scanner();
 	
-	expresion(folset | CPYCOMA);
+	expresion(folset | CPYCOMA,1);
 	
 	match(CPYCOMA, 23);
 	test(folset,NADA,54);
@@ -574,16 +621,17 @@ void proposicion_retorno(set folset)
 void proposicion_expresion(set folset)
 {
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
-		expresion(folset | CPYCOMA);
+		expresion(folset | CPYCOMA,1);
 
 	match(CPYCOMA, 23);
 	test(folset,NADA,55);
 }
 
 
-void expresion(set folset)
-{	
-	expresion_simple(folset | CASIGNAC | first(EXPRESION_SIMPLE) | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+int expresion(set folset, int necesito_indice)
+{
+    int tipo, tipo2;
+	tipo = expresion_simple(folset | CASIGNAC | first(EXPRESION_SIMPLE) | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, necesito_indice);
 
 	while(lookahead_in(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG))
 	{
@@ -591,7 +639,36 @@ void expresion(set folset)
 		{
 			case CASIGNAC:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG); //Deberia llevar first de Exp simp??
+				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				if(tipo != tipo2){
+				    //VER ACA COERCION
+				    tipo = TIPOERROR;
+				    error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
+				}
+				else{
+				    if(tipo == TIPOARREGLO){ //Por si devuelve tipo arreglo, en si deberia entrar por los 3 de abajo
+				        tipo = TIPOERROR;
+                        error_handler(81); //No se permite la asignacion de arreglos como un todo
+				    }
+				    else if(tipo == ARRINT){
+				        tipo = TIPOERROR;
+				        error_handler(81); //No se permite la asignacion de arreglos como un todo
+				    }
+				    else if(tipo == ARRFLOAT){
+				        tipo = TIPOERROR;
+                        error_handler(81); //No se permite la asignacion de arreglos como un todo
+				    }
+				    else if(tipo == ARRCHAR){
+				        tipo = TIPOERROR;
+                        error_handler(81); //No se permite la asignacion de arreglos como un todo
+				    }
+				    else{ //Hecho por las dudas en caso que quiera asignar TIPOERROR o TIPOVOID x ej
+				        if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
+				            tipo = TIPOERROR;
+				            error_handler(104); //Tipo de la asignacion no valido
+				        }
+				    }
+				}
 				break;
 				
 			case CDISTINTO:
@@ -601,45 +678,86 @@ void expresion(set folset)
 			case CMAYOR:
 			case CMAIG:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);  //Deberia llevar first de Exp simp??
+				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				if(tipo != tipo2){
+				    // COERCION Ver si la implemento en futuro
+                    tipo = TIPOERROR;
+                    error_handler(96); //Los operandos de los operadores logicos o relacionales solo pueden ser de tipo char, int o float
+                }
+                else{
+                    if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
+                        tipo = TIPOERROR;
+                        error_handler(96); //Los operandos de los operadores logicos o relacionales solo pueden ser de tipo char, int o float
+                    }
+                }
 				break;
 		}
 	}
+	return tipo;
 }
 
 
-void expresion_simple(set folset)
+int expresion_simple(set folset, int necesito_indice)
 {
-	test(first(EXPRESION_SIMPLE),folset | COR,56); //+ y - estan en el first y f1 de termino incluido en f1 exp_sim
+    int tipo, tipo2;
+	test(first(EXPRESION_SIMPLE),folset | COR,56);
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 
-	termino(folset | CMAS | CMENOS | COR | first(TERMINO));
+	tipo = termino(folset | CMAS | CMENOS | COR | first(TERMINO), necesito_indice);
 
 	while(lookahead_in(CMAS | CMENOS | COR | first(TERMINO)))
 	{
 		match(CMAS | CMENOS | COR,65);
-		termino(folset | CMAS | CMENOS | COR | first(TERMINO));
+		tipo2 = termino(folset | CMAS | CMENOS | COR | first(TERMINO), 1);
+
+		if(tipo != tipo2){
+            // COERCION Ver si la implemento en futuro
+            tipo = TIPOERROR;
+            error_handler(105); //Los tipos de ambos lados de los operadores logicos o aritmeticos deben ser estructuralmente equivalentes
+        }
+        else{
+            if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
+                tipo = TIPOERROR;
+                error_handler(106); //Los operandos de los operadores logicos o aritmeticos solo pueden ser de tipo char, int o float
+            }
+        }
 	}
+	return tipo;
 }
 
 
-void termino(set folset)
-{	
-	factor(folset | CMULT | CDIV | CAND | first(FACTOR));
+int termino(set folset, int necesito_indice)
+{
+    int tipo, tipo2;
+	tipo = factor(folset | CMULT | CDIV | CAND | first(FACTOR), necesito_indice);
 
 	while(lookahead_in(CMULT | CDIV | CAND | first(FACTOR)))
 	{
 		match(CMULT | CDIV | CAND,65);
-		factor(folset | CMULT | CDIV | CAND | first(FACTOR));
+		tipo2 = factor(folset | CMULT | CDIV | CAND | first(FACTOR), 1);
+		if(tipo != tipo2){
+            // COERCION Ver si la implemento en futuro
+            tipo = TIPOERROR;
+            error_handler(105); //Los tipos de ambos lados de los operadores logicos o aritmeticos deben ser estructuralmente equivalentes
+        }
+        else{
+            if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
+                tipo = TIPOERROR;
+                error_handler(106); //Los operandos de los operadores logicos o aritmeticos solo pueden ser de tipo char, int o float
+            }
+        }
 	}
+	return tipo;
 }
 
 
-void factor(set folset)
+int factor(set folset, int necesito_indice)
 {
 	test(first(FACTOR), folset /*| CPAR_CIE*/,57); //Ver si saco CPAR_CIE por lote: if(k==) a;
 	/** Lo tuve que sacar por lote propio: lote3ce.c en linea 21: f1(ab,); se colgaba la ejecucion **/
+	int tipo;
+
 	switch(lookahead())
 	{
 		case CIDENT:
@@ -651,10 +769,10 @@ void factor(set folset)
 		        // (***-) Ver si falta mas info que poner
 		    }
 		    else if(Clase_Ident(sbol->lexema) == CLASFUNC){
-		        llamada_funcion(folset);
+		        tipo = llamada_funcion(folset);
 		    }
 		    else{
-		        variable(folset);
+		        tipo = variable(folset, necesito_indice);
 		    }
 
 		    //Tomar nota de aca, si no es funcion, lo mando a variable, si queria usar una funcion, me va a tirar error por variable en vez de funcion
@@ -666,80 +784,215 @@ void factor(set folset)
 		        error_handler(10);
 		        printf("\n\nError en factor -> switch -> case CIDENT -> else \n\n");
 		        //Tendre un caso que entre aca? Revisar
-		    }*/ //Despreciado ya que se mando el error a variable
+		    }*/ //Despreciado ya que se mando el error a variable BORRAR cuando ponga lo de arriba en el informe
 			break;
 		
 		case CCONS_ENT:
 		case CCONS_FLO:
 		case CCONS_CAR:
-			constante(folset);
+			tipo = constante(folset);
 			break;
 		
 		case CCONS_STR:
+		    tipo = STRING; //PARA REVISAR EN COUT QUE LA EXPRESION SEA UN STRING, ENTONCES ES VALIDO
 			scanner();
 			break;
 		
 		case CPAR_ABR:
 		//case CPAR_CIE: //SACAR PAR CIE SI SACO ARRIBA
 			match(CPAR_ABR,20);
-			expresion(folset | CPAR_CIE);
+			tipo = expresion(folset | CPAR_CIE,1);
 			match(CPAR_CIE, 21);
 			break;
 			
 		case CNEG:
 			scanner();
-			expresion(folset);
+			tipo = expresion(folset,1);
 			break;
 			
 		default:
+		    tipo = TIPOERROR;
 			error_handler(32);
 	}
 	test(folset,NADA,58);
+	return tipo;
 }
 
 
-void variable(set folset)
+int variable(set folset, int necesito_indice)
 {
 	test(first(VARIABLE),folset | CCOR_ABR,59); //POR SACAR DE ABAJO SACO DE ACA TMB FIRST EXP Y CCOR CIE
+	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
+	if(tipo == TIPOARREGLO){
+	    flag = 1;
+	    tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.arr.ptero_tipo_base;
+
+	    /**No pude hacerlo con un switch ya que TIPOINT, TIPOFLOAT y TIPOCHAR se le asignan valores en ejecucion**/
+	    if(tipo == TIPOINT){
+	        tipo = ARRINT;
+	    }
+	    else if(tipo == TIPOFLOAT){
+            tipo = ARRFLOAT;
+        }
+        else if(tipo == TIPOCHAR){
+            tipo = ARRCHAR;
+        }
+        else{
+            tipo = TIPOERROR;
+        }
+
+	}
 	match(CIDENT, 17);
 
 	/* El alumno debera verificar con una consulta a TS
 	si, siendo la variable un arreglo, corresponde o no
 	verificar la presencia del subindice */
 
-	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores (Para guardar registro)
+	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores (Para guardar registro) BORRAR
 	{
+	    if(flag != 1){ //Veo si no tengo un arreglo
+            tipo = TIPOERROR;
+            error_handler(78); //La variable no es de tipo arreglo
+        }
 		match(CCOR_ABR,35);
-		expresion(folset | CCOR_CIE);
+		expresion(folset | CCOR_CIE,1); //Controlar que no uso el tipo de esta expresion, solo despues BORRAR ,onda el tipo deberia ser int
 		match(CCOR_CIE, 22);
 	}
+	else{ //Si no hay un CCOR_ABR
+	    if(flag == 1){ //Veo si tengo un arreglo
+	        if(necesito_indice == 1){
+	            tipo = TIPOERROR;
+                error_handler(79); //En una expresion los arreglos deben ser accedidos por sus elementos
+	        }
+	    }
+	}
 	test(folset,NADA,60);
+	return tipo;
 }
 
 
-void llamada_funcion(set folset)
+int llamada_funcion(set folset)
 {
+    int posicionTSF = en_tabla(sbol->lexema);
+    int cantidad_parametros_formales = ts[posicionTSF].ets->desc.part_var.sub.cant_par, cantidad_parametros_actuales = 0;
+    int tipo = ts[posicionTSF].ets->ptr_tipo;
+
 	match(CIDENT, 17);
-	
+
 	match(CPAR_ABR, 20);
 	
-	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR)) // Incluyo CCOMA? con f(,b)
-		lista_expresiones(folset | CPAR_CIE);
+	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
+		cantidad_parametros_actuales = lista_expresiones(folset | CPAR_CIE, posicionTSF);
+
+    if(cantidad_parametros_formales != cantidad_parametros_actuales){
+        tipo = TIPOERROR;
+        error_handler(90); //La CANTIDAD de parametros actuales no coincide con la cantidad de parametros formales
+    }
 
 	match(CPAR_CIE, 21);
 	test(folset,NADA,61);
+	return tipo;
 }
 
 
-void lista_expresiones(set folset)
+int lista_expresiones(set folset, int posicionTSF)
 {
-	expresion(folset | CCOMA | first(EXPRESION));
+    int flag = 0, cantidad_parametros_actuales = 0;
+    tipo_inf_res *ptr_inf_res;
+    int tipo_parametro_formal, tipo_parametro_formal_base;
+    int tipo_parametro_actual, tipo_parametro_actual_base;
+
+    if(ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res != NULL){ //Veo que tenga definido parametros
+        ptr_inf_res = ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res; //Recupero el puntero de parametros
+        tipo_parametro_formal = ptr_inf_res->ptero_tipo; //Recupero el tipo de primer parametro formal
+        if(tipo_parametro_formal == TIPOARREGLO){
+            tipo_parametro_formal_base = ptr_inf_res->ptero_tipo_base;
+        }
+        else{
+            tipo_parametro_formal_base = -1;
+        }
+    }
+    else{
+        tipo_parametro_formal = TIPOERROR; //Por si no tengo definidos parametros
+    }
+
+	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
+	cantidad_parametros_actuales++;
+
+
+	if(tipo_parametro_actual == -11){
+	    tipo_parametro_actual = TIPOARREGLO;
+	    tipo_parametro_actual_base = TIPOINT;
+	}
+	else if(tipo_parametro_actual == -12){
+        tipo_parametro_actual = TIPOARREGLO;
+        tipo_parametro_actual_base = TIPOFLOAT;
+    }
+    else if(tipo_parametro_actual == -12){
+        tipo_parametro_actual = TIPOARREGLO;
+        tipo_parametro_actual_base = TIPOCHAR;
+    }
+    else{
+        tipo_parametro_actual_base = -1;
+    }
+
+	if((tipo_parametro_formal != tipo_parametro_actual) && (tipo_parametro_formal_base != tipo_parametro_actual_base)){
+	    flag = 1;
+	}
+
+	if((tipo_parametro_actual == TIPOARREGLO) && (ptr_inf_res->tipo_pje != 'v')){
+        error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
+    }
+
+	if(tipo_parametro_actual == TIPOARREGLO){
+
+	}
 
 	while(lookahead_in(CCOMA | first(EXPRESION)))
 	{
 		match(CCOMA,64);
-		expresion(folset | CCOMA | first(EXPRESION));
+		if(ptr_inf_res->ptr_sig != NULL){ //Si sigo teniendo parametros
+		    ptr_inf_res = ptr_inf_res->ptr_sig; //Asigno el siguiente al puntero de parametros
+		    tipo_parametro_formal = ptr_inf_res->ptero_tipo;
+		    if(tipo_parametro_formal == TIPOARREGLO){
+                tipo_parametro_formal_base = ptr_inf_res->ptero_tipo_base;
+            }
+            else{
+                tipo_parametro_formal_base = -1;
+            }
+		}
+		else{ //Tengo mas parametros actuales que formales
+		    tipo_parametro_formal = TIPOERROR;
+		}
+
+		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
+		cantidad_parametros_actuales++;
+
+        	if(tipo_parametro_actual == -11){
+        	    tipo_parametro_actual = TIPOARREGLO;
+        	    tipo_parametro_actual_base = TIPOINT;
+        	}
+        	else if(tipo_parametro_actual == -12){
+                tipo_parametro_actual = TIPOARREGLO;
+                tipo_parametro_actual_base = TIPOFLOAT;
+            }
+            else if(tipo_parametro_actual == -12){
+                tipo_parametro_actual = TIPOARREGLO;
+                tipo_parametro_actual_base = TIPOCHAR;
+            }
+            else{
+                tipo_parametro_actual_base = -1;
+            }
+
+        if((tipo_parametro_formal != tipo_parametro_actual) && (tipo_parametro_formal_base != tipo_parametro_actual_base)){
+            flag = 1;
+        }
 	}
+
+	if(flag != 0){
+	    error_handler(91); //El TIPO de los parametros actuales no coincide con el de los parametros formales
+	}
+	return cantidad_parametros_actuales;
 }
 
 

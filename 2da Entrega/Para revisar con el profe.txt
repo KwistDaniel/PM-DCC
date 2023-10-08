@@ -89,3 +89,26 @@ todo: actualizar parametros de prototipos en parser.h
 Decir que agregue control de que el parametro no puede ser void pq es una "var" que la estoy dando como void (por lectura del mensaje de error 73)
 
 tambien que agregue el error 101 por lote CE2lote2.c
+
+tambien agregue error 102 porque en error.c dice que main no puede ser void, pero el sistema de tipos no lo especifica
+
+
+
+7/10: Que hago con las variables y funciones repetidas? se insertan o no? k onda?
+
+
+proposicion_compuesta
+    era pop_nivel?
+
+definicion_funcion
+    if(strcmp(inf_id->nbre,"main") != 0){ //Si el id de la funcion no es main
+        pushTB(); //Aumento nivel
+    }
+    //**ESTO DE ACA ARRIBA VA?**//
+    /*Creo que no, por eso lo saque*/
+
+
+
+
+
+    EN DECLARADOR INIT ME FALTAN COSAS

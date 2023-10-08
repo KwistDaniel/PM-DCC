@@ -29,11 +29,15 @@ make
 
 :: Lotes propios tpm2:
 :: Sin errores:
-ucc -c lote1se2.c
 :: Con errores:
 ucc -c CE2lote1.c
 ucc -c CE2lote2.c
 ucc -c CE2lote3.c
+ucc -c CE2lote4.c
+ucc -c CE2lote5.c
+ucc -c CE2lote6.c
+ucc -c CE2lote7.c
+ucc -c CE2lote8.c
 
 
 :: Ejecucion de los lotes de prueba

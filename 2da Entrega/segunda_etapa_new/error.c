@@ -113,6 +113,11 @@ void error_print(int ne)
 		case 99: printf("\t Error %d: El identificador debe ser una funcion o un procedimiento\n", ne); break;														
 		case 100:printf("\t Error %d: El identificador debe ser una variable o parametro\n", ne); break;
 		case 101:printf("\t Error %d: La cantidad de valores inicializadores no puede ser 0\n", ne); break;
+		case 102:printf("\t Error %d: La funcion main() ya se encuentra declarada\n", ne); break;
+		case 103:printf("\t Error %d: Un arreglo debe ser de tipo simple\n", ne); break;
+		case 104:printf("\t Error %d: Tipo de la asignacion no valido\n", ne); break;
+		case 105:printf("\t Error %d: Los tipos de ambos lados de los operadores logicos o aritmeticos deben ser estructuralmente equivalentes\n", ne); break;
+		case 106:printf("\t Error %d: Los operandos de los operadores logicos o aritmeticos solo pueden ser de tipo char, int o float\n", ne); break;
 	}
 }
 
