@@ -1,0 +1,23 @@
+Se implementan los siguientes controles respecto al sistema de tipos (Reglas):
+	-Coerciones para asignaciones unicamente.
+	Arreglos:
+		-7
+		-8
+	E-S:
+		-19
+	Asignacion:
+		-10
+		-13
+		-Ademas, 11 de manera indirecta (no lo permito pq especifico que necesito acceder a los elementos del arreglo)
+	Funciones-Parametros:
+		-23
+		-26
+		-27
+		-28
+		-31 (Obligatorio)
+	Logica Booleana:
+		-33
+
+Algunas decisiones de implementacion se encuentran comentadas.
+
+Se modifica el archivo run.bat incluyendo lotes con errores especificos para esta etapa (8 lotes).
