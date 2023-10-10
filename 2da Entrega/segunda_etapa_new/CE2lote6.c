@@ -11,6 +11,7 @@ void main(){
     if(a[1]){}
     while(a[1]){}
     if(f1()){}
+    while(f1()){}
 }
 
 # Linea comentario #

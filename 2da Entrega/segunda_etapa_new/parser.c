@@ -1,14 +1,9 @@
 #include <string.h>
 #include "parser.h"
 
-
-//VER:
-//cuando llamo a especificador_tipo usar el tipo
-//ver que las funciones que devuelvan algo, mas que nada tipo, lo asignen, consulten o pasen a donde corresponda
-//
-
-int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR;
-int ARRINT = -11, ARRFLOAT = -12, ARRCHAR = -13, STRING = -14;
+int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR; //Variables que contendran el valor en tabla del tipo que sugiere su nombre
+int ARRCHAR = -41, ARRINT = -42, ARRFLOAT = -43, STRING = -14; //Valores auxiliares para facilitar el uso y comparacion en arreglos y strings
+ //Los anteriores se implementan en valores negativos para que no conflictuen con valores devueltos por la pila de la tabla de simbolos
 
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
@@ -23,28 +18,25 @@ int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
 
+    // Manejo inicial de la tabla de simbolos
     inic_tablas();
-
     TIPOVOID = en_tabla("void");
     TIPOCHAR = en_tabla("char");
     TIPOINT = en_tabla("int");
     TIPOFLOAT = en_tabla("float");
     TIPOARREGLO = en_tabla("TIPOARREGLO");
     TIPOERROR = en_tabla("TIPOERROR");
-
-
-
     pushTB();//Bloq 0
 	
 	unidad_traduccion(CEOF);
 
-    if(en_tabla("main") == NIL){ //Y ya esta en tabla
+    if(en_tabla("main") == NIL){ //Control para revisar que se haya creado una funcion main
         error_handler(84); //Falta declarar la funcion main()
     }
 
 	pop_nivel();
 
-	//Ver si quiero limpiar el inic tabla
+	//Aqui se podria limpiar lo que queda por la ejecucion del procedimiento inic_tablas()
 
 	match(CEOF, 9);
 
@@ -76,7 +68,6 @@ void declaraciones(set folset)
 	
 	especificador_declaracion(folset,tipo);
 }
-
 
 
 int especificador_tipo(set folset)
@@ -160,14 +151,13 @@ void definicion_funcion(set folset,int tipo)
     int cantidad_parametros = 0;
 	match(CPAR_ABR, 20);
 
-    pushTB(); //Aumento nivel pq los parametros y variables son de mayor nivel
+    pushTB(); //Aumento nivel para insertar correctamente los parametros y variables de la funcion
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		cantidad_parametros = lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
 
 	match(CPAR_CIE, 21);
 
-	//Ir a la pos en la TS y darle el num de params que conte
 	if(insertando_main == 1){ //Si el id de la funcion es main
 	    if(cantidad_parametros != 0){ //Si main tiene parametros
 	        ts[posicionTSF].ets->ptr_tipo = TIPOERROR;
@@ -180,13 +170,13 @@ void definicion_funcion(set folset,int tipo)
 }
 
 
-int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion para completar param (***-)
+int lista_declaraciones_param(set folset, int posicionTSF)
 {
-    int cantidad_parametros = 0;
+    int cantidad_parametros = 0; //Variable que se retornara indicando la cantidad de parametros insertados
 
-    tipo_inf_res *ptr_inf_res;
+    tipo_inf_res *ptr_inf_res; //Utilizo un puntero auxiliar que contendra la direccion del puntero de la correspondiente funcion insertada en la TS
     ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
-    ptr_inf_res = ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res;
+    ptr_inf_res = ts[posicionTSF].ets->desc.part_var.sub.ptr_inf_res; //Solicitud de memoria y actualizacion de puntero que mantendra la informacion de los parametros
 
 	declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF, ptr_inf_res);
 
@@ -196,7 +186,7 @@ int lista_declaraciones_param(set folset, int posicionTSF) //Agrego la posicion 
 	{
 		match(CCOMA,64);
 		ptr_inf_res->ptr_sig = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));
-		ptr_inf_res = ptr_inf_res->ptr_sig;
+		ptr_inf_res = ptr_inf_res->ptr_sig; //Solicitud de memoria y actualizacion de puntero que mantendra la informacion de los parametros
 		declaracion_parametro(folset | CCOMA | first(DECLARACION_PARAMETRO), posicionTSF, ptr_inf_res);
 		cantidad_parametros++;
 	}
@@ -218,12 +208,17 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 	    error_handler(73); //Una variable, un parametro o un arreglo no pueden ser de tipo void
 	}
 
-
-    int control28 = 0, flag28 = 0;
+    int control28 = 0, flag_Arreglo = 0;
 
 	if(lookahead_in(CAMPER)){
 	    scanner();
 	    control28 = 1; //Se uso el &, controlar que no venga un arreglo (28)
+	    inf_id->desc.part_var.param.tipo_pje = 'd';
+        ptr_inf_res->tipo_pje = 'd';
+    }
+    else{
+        inf_id->desc.part_var.param.tipo_pje = 'v';
+        ptr_inf_res->tipo_pje = 'v';
     }
 
 	strcpy(inf_id->nbre,sbol->lexema);
@@ -233,46 +228,28 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
 	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
 	    if(control28 == 1){
-	        flag28 = 1;
 	        error_handler(92); //No se permite <tipo> & <id_arreglo> [] en la definicion de un parametro
+	        inf_id->ptr_tipo = TIPOERROR;
+            ptr_inf_res->ptero_tipo = TIPOERROR;
+            inf_id->desc.part_var.param.ptero_tipo_base = TIPOERROR; //Creo que no hace falta
+            ptr_inf_res->ptero_tipo_base = TIPOERROR; //Creo que no hace falta
 	    }
 	    else{
-	        control28 = 1; //Utilizo este flag para saber que tengo un arreglo
+	        flag_Arreglo = 1;
+	        inf_id->ptr_tipo = TIPOARREGLO;
+            inf_id->desc.part_var.param.ptero_tipo_base = tipo;
+            ptr_inf_res->ptero_tipo = TIPOARREGLO;
+            ptr_inf_res->ptero_tipo_base = tipo;
 	    }
 		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
 	}
-	if(control28 == 1){
-	    if(flag28 == 1){
-            inf_id->ptr_tipo = TIPOERROR;
-            inf_id->desc.part_var.param.ptero_tipo_base = TIPOERROR; //Creo que no hace falta
-            ptr_inf_res->ptero_tipo = TIPOERROR;
-            ptr_inf_res->ptero_tipo_base = TIPOERROR; //Creo que no hace falta
-	    }
-	    else{
-	        inf_id->desc.part_var.param.ptero_tipo_base = tipo;
-            inf_id->ptr_tipo = TIPOARREGLO;
-            ptr_inf_res->ptero_tipo = TIPOARREGLO;
-            ptr_inf_res->ptero_tipo_base = tipo;
-	    }
-	}
-	else{
+	if(flag_Arreglo != 1){
 	    inf_id->ptr_tipo = tipo;
-	    ptr_inf_res->ptero_tipo = tipo;
+        ptr_inf_res->ptero_tipo = tipo;
 	}
-	if(control28 == 1){
-	    //Note that the formal parameter is specified as an array reference using the [] notation, but this notation is not used when an array is passed as an actual parameter.
-	    //func(a); no uso el [] pq lo invoco con el nombre
-	    inf_id->desc.part_var.param.tipo_pje = 'd';
-        ptr_inf_res->tipo_pje = 'd';
-    }
-    else{
-        inf_id->desc.part_var.param.tipo_pje = 'v';
-        ptr_inf_res->tipo_pje = 'v';
-    }
-	insertarTS(); //.Insercion del parametro.
 
-	//Ya estoy sumando la cantidad de parametros mas arriba
+	insertarTS(); //.Insercion del parametro.
 	test(folset,NADA,45);
 }
 
@@ -328,14 +305,6 @@ void declarador_init(set folset, int tipo)
 			match(CASIGNAC,66);
 			tipo2 = constante(folset);
 			if(tipo != tipo2){
-			    //printf("\n\n");
-			    //printf("\n\n");
-			    //printf("REVISAR SI ES A UN ARREGLO QUE SEAN MISMO TIPO BASE");
-			    //printf("\n\n");
-			    //printf("\n\n");
-			    //printf("Tipo: %d \n",tipo);
-			    //printf("Tipo2: %d \n",tipo2);
-			    // BORRAR
                 tipo = TIPOERROR;
                 error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
             }
@@ -349,22 +318,17 @@ void declarador_init(set folset, int tipo)
 		    if((tipo == TIPOINT) || (tipo == TIPOFLOAT) || (tipo == TIPOCHAR)){
 		        inf_id->ptr_tipo = TIPOARREGLO;
 		        inf_id->desc.part_var.arr.ptero_tipo_base = tipo;
-		    }
-		    else if(tipo == TIPOARREGLO){
-		        inf_id->ptr_tipo = TIPOERROR; //CREO QUE NO TIENE SENTIDO BORRAR ESTE ELSE IF Y EL ERROR 103
-		        error_handler(103); //Un arreglo debe ser de tipo simple
-		    }
+		    } //Se desprecio el else ya que era ambiguo.
 
 			match(CCOR_ABR, 35);
 
 			if(lookahead_in(CCONS_ENT)){
 			    dimension = atoi(sbol->lexema);
 			    if(dimension <= 0){
+			        inf_id->ptr_tipo = TIPOERROR;
 			        error_handler(75); //La cantidad de elementos de un arreglo puede estar dada por un número natural (es decir, mayor a 0) y/o a través de la inicialización del mismo.
-
 			    }
 			    else{
-
 			        inf_id->desc.part_var.arr.cant_elem = atoi(sbol->lexema);
                 }
 			    constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CLLA_CIE | first(LISTA_INICIALIZADORES));
@@ -373,6 +337,7 @@ void declarador_init(set folset, int tipo)
 			    sin_dimension = 1;
 			}
 			else{
+			    inf_id->ptr_tipo = TIPOERROR;
                 error_handler(74); //La cdad. de elementos de un arreglo debe ser una cte. entera en la declaracion
             }
 
@@ -385,7 +350,11 @@ void declarador_init(set folset, int tipo)
 				match(CLLA_ABR, 24);
 				cantidad_elementos = lista_inicializadores(folset | CLLA_CIE, tipo);
 
-				if (cantidad_elementos == 0){
+				if(cantidad_elementos == -1){ //El error se indica en lista_inicializadores
+				    inf_id->ptr_tipo = TIPOERROR;
+				}
+				else if (cantidad_elementos == 0){
+				    inf_id->ptr_tipo = TIPOERROR;
                     error_handler(101); //La cantidad de valores inicializadores no puede ser 0
                 }
 
@@ -393,6 +362,7 @@ void declarador_init(set folset, int tipo)
 				    inf_id->desc.part_var.arr.cant_elem = cantidad_elementos;
 				}
 				else if((dimension > 0) && (cantidad_elementos > dimension)){
+				    inf_id->ptr_tipo = TIPOERROR;
 				    error_handler(76); // La cantidad de valores inicializadores debe ser igual o menor al tamaño del arreglo declarado
 				}
 				else{
@@ -417,9 +387,8 @@ int lista_inicializadores(set folset, int tipo_base)
 	}
 
 	if(tipo_constante != tipo_base){
-	    //printf("\nTipo constante: %d" , tipo_constante); CONTROLES POR ALGO QUE FALLABA, BORRAR
-	    //printf("\nTipo base: %d" , tipo_base); CONTROLES POR ALGO QUE FALLABA, BORRAR
 	    error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
+	    return -1; //Salgo para indicar el error
 	}
 
 	while(lookahead_in(CCOMA | first(CONSTANTE)))
@@ -428,10 +397,8 @@ int lista_inicializadores(set folset, int tipo_base)
 		tipo_constante = constante(folset | CCOMA | first(CONSTANTE));
 
 	    if(tipo_constante != tipo_base){
-            //printf("\nif while"); CONTROLES POR ALGO QUE FALLABA, BORRAR
-	        //printf("\nTipo constante: %d" , tipo_constante); CONTROLES POR ALGO QUE FALLABA, BORRAR
-            //printf("\nTipo base: %d" , tipo_base); CONTROLES POR ALGO QUE FALLABA, BORRAR
             error_handler(77); //El tipo de los valores inicializadores del arreglo debe coincidir con su declaracion
+            return -1; //Salgo para indicar el error
         }
 		cantidad_elementos++;
 	}
@@ -441,10 +408,12 @@ int lista_inicializadores(set folset, int tipo_base)
 
 void proposicion_compuesta(set folset,int abrir_bloque)
 {
-    if(abrir_bloque==1){
+	test(first(PROPOSICION_COMPUESTA),folset | first(LISTA_DECLARACIONES) | first(LISTA_PROPOSICIONES) | CLLA_CIE,49);
+
+	if(abrir_bloque==1){ //Por si vengo de proposicion y necesito incrementar el nivel
         pushTB();
     }
-	test(first(PROPOSICION_COMPUESTA),folset | first(LISTA_DECLARACIONES) | first(LISTA_PROPOSICIONES) | CLLA_CIE,49);
+
 	match(CLLA_ABR, 24);
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
@@ -499,7 +468,7 @@ void lista_proposiciones(set folset)
 
 void proposicion(set folset)
 {
-	test(first(PROPOSICION),folset | CSHL | CSHR /*| first(PROPOSICION_EXPRESION) | first(PROPOSICION_COMPUESTA) | first(PROPOSICION_ITERACION) | first(PROPOSICION_SELECCION) | first(PROPOSICION_RETORNO) | first(PROPOSICION_E_S)*/,52); //c2 puede ya estar en el first que esta en c1 (!)
+	test(first(PROPOSICION),folset | CSHL | CSHR ,52); //Se restan elementos en c2 ya que se pueden encontrar en c1
 	switch(lookahead())
 	{
 		case CLLA_ABR:
@@ -553,8 +522,8 @@ void proposicion_iteracion(set folset)
 	match(CPAR_ABR, 20);
 
 	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION),1);
-	printf("\nTIPO: %d \n",tipo);
-    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
         error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
     }
 
@@ -573,8 +542,8 @@ void proposicion_seleccion(set folset)
 	match(CPAR_ABR, 20);
 
 	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
-	printf("\nTIPO: %d \n",tipo);
-    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
         error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
     }
 
@@ -600,16 +569,18 @@ void proposicion_e_s(set folset)
 			match(CIN,29);
 			
 			match(CSHR, 30);
-			if(en_tabla(sbol->lexema) == NIL){ //COMPARO CON NIL PQ EN DEFINICION NIL ES -1
+			if(en_tabla(sbol->lexema) == NIL){ //en_tabla devuelve NIL (-1) si no esta en tabla
                 error_handler(71); //Identificador no declarado
                 strcpy(inf_id->nbre,sbol->lexema);
                 inf_id->ptr_tipo = TIPOERROR;
+                tipo = TIPOERROR;
+                inf_id->clase = -1; //Le asigno una clase incorrecta
+                scanner(); //Consumo el identificador
                 insertarTS();
-                // (***-) Ver si falta mas info que poner
             }
 			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
-            printf("\nTIPO: %d \n",tipo);
-			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+
+			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
 			    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
 			}
 			
@@ -617,14 +588,13 @@ void proposicion_e_s(set folset)
 			{
 				match(CSHR,30);
 				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
-				printf("\nTIPO: %d \n",tipo);
-				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
+
+				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
                 }
 			}
 
 			match(CPYCOMA, 23);
-			
 			break;
 
 		case CSHL:
@@ -634,24 +604,19 @@ void proposicion_e_s(set folset)
 			match(CSHL, 31);
 			
 			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
-			printf("\nTIPO: %d \n",tipo);
-			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){
+			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                 error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
             }
-            printf("\nSTRING ES TIPO: %d \n", STRING);
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
 				tipo = expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1);
-				printf("\nTIPO: %d \n",tipo);
-
-				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){
+				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
                 }
 			}
 
 			match(CPYCOMA, 23);
-			
 			break;
 		
 		default:
@@ -695,17 +660,24 @@ int expresion(set folset, int necesito_indice)
 				scanner();
 				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
 				if(tipo != tipo2){
-				    //VER ACA COERCION
-				    tipo = TIPOERROR;
-				    error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
+				    if(!( //Aceptacion de Coercion
+				        ((tipo == TIPOFLOAT) &&
+				            ((tipo2 == TIPOINT) || (tipo2 == TIPOCHAR)) //Float acepta casteo de Int y Char
+                        ) ||
+                        ((tipo == TIPOINT) && (tipo2 == TIPOCHAR) //Int acepta casteo de Char
+                        )
+                    )){
+                        tipo = TIPOERROR;
+                        error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
+				    }
 				}
-				else{ //No entra aca porque solicito que para acceder a un arreglo se utilice un indice
+				else{ //Ramificacion else obsoleta ya que se solicita que se accedan a los arreglos mediante un indice (Excepto en invocacion a funcion)
 				    if((tipo == TIPOARREGLO) || (tipo == ARRINT) || (tipo == ARRFLOAT) || (tipo == ARRCHAR))
 				    { //Por si devuelve tipo arreglo, en si deberia entrar por los 3 de abajo
 				        tipo = TIPOERROR;
                         error_handler(81); //No se permite la asignacion de arreglos como un todo
 				    }
-				    else{ //Hecho por las dudas en caso que quiera asignar TIPOERROR o TIPOVOID x ej, desconozco si existe la posibilidad que pase
+				    else{ //Hecho por las dudas en caso que quiera asignar TIPOERROR o TIPOVOID x ej, de todas formas no deberia ser posible
 				        if((tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != TIPOCHAR)){
 				            tipo = TIPOERROR;
 				            error_handler(104); //Tipo de la asignacion no valido
@@ -723,7 +695,7 @@ int expresion(set folset, int necesito_indice)
 				scanner();
 				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
 				if(tipo != tipo2){
-				    // COERCION Ver si la implemento en futuro
+				    // Posible implementacion de COERCION a futuro
                     tipo = TIPOERROR;
                     error_handler(96); //Los operandos de los operadores logicos o relacionales solo pueden ser de tipo char, int o float
                 }
@@ -755,7 +727,7 @@ int expresion_simple(set folset, int necesito_indice)
 		tipo2 = termino(folset | CMAS | CMENOS | COR | first(TERMINO), 1);
 
 		if(tipo != tipo2){
-            // COERCION Ver si la implemento en futuro
+            // Posible implementacion de COERCION a futuro
             tipo = TIPOERROR;
             error_handler(105); //Los tipos de ambos lados de los operadores logicos o aritmeticos deben ser estructuralmente equivalentes
         }
@@ -780,7 +752,7 @@ int termino(set folset, int necesito_indice)
 		match(CMULT | CDIV | CAND,65);
 		tipo2 = factor(folset | CMULT | CDIV | CAND | first(FACTOR), 1);
 		if(tipo != tipo2){
-            // COERCION Ver si la implemento en futuro
+            // Posible implementacion de COERCION a futuro
             tipo = TIPOERROR;
             error_handler(105); //Los tipos de ambos lados de los operadores logicos o aritmeticos deben ser estructuralmente equivalentes
         }
@@ -804,12 +776,14 @@ int factor(set folset, int necesito_indice)
 	switch(lookahead())
 	{
 		case CIDENT:
-		    if(en_tabla(sbol->lexema) == NIL){ //COMPARO CON NIL PQ EN DEFINICION NIL ES -1
+		    if(en_tabla(sbol->lexema) == NIL){ //en_tabla devuelve NIL (-1) si no esta en tabla
 		        error_handler(71); //Identificador no declarado
 		        strcpy(inf_id->nbre,sbol->lexema);
 		        inf_id->ptr_tipo = TIPOERROR;
+		        tipo = TIPOERROR;
+		        inf_id->clase = -1; //Le asigno una clase incorrecta
+		        scanner(); //Consumo el identificador
 		        insertarTS();
-		        // (***-) Ver si falta mas info que poner
 		    }
 		    else if(Clase_Ident(sbol->lexema) == CLASFUNC){
 		        tipo = llamada_funcion(folset);
@@ -817,17 +791,6 @@ int factor(set folset, int necesito_indice)
 		    else{
 		        tipo = variable(folset, necesito_indice);
 		    }
-
-		    //Tomar nota de aca, si no es funcion, lo mando a variable, si queria usar una funcion, me va a tirar error por variable en vez de funcion
-		    //Informar en el informe que se hace esto
-		    //Ademas, sino, podria traer el match antes del else if y de ahi ver si tiene un ( el lookahead o no y de ahi tratarlo.
-		    //Aca no van a esperar un identificador ni llamada a funcion ni variable
-
-		    /*else{
-		        error_handler(10);
-		        printf("\n\nError en factor -> switch -> case CIDENT -> else \n\n");
-		        //Tendre un caso que entre aca? Revisar
-		    }*/ //Despreciado ya que se mando el error a variable BORRAR cuando ponga lo de arriba en el informe
 			break;
 		
 		case CCONS_ENT:
@@ -837,12 +800,11 @@ int factor(set folset, int necesito_indice)
 			break;
 		
 		case CCONS_STR:
-		    tipo = STRING; //PARA REVISAR EN COUT QUE LA EXPRESION SEA UN STRING, ENTONCES ES VALIDO
+		    tipo = STRING; //Tipo auxiliar para comprobacion en proposicion_e_s en salida
 			scanner();
 			break;
 		
 		case CPAR_ABR:
-		//case CPAR_CIE: //SACAR PAR CIE SI SACO ARRIBA
 			match(CPAR_ABR,20);
 			tipo = expresion(folset | CPAR_CIE,1);
 			match(CPAR_CIE, 21);
@@ -864,26 +826,11 @@ int factor(set folset, int necesito_indice)
 
 int variable(set folset, int necesito_indice)
 {
-	test(first(VARIABLE),folset | CCOR_ABR,59); //POR SACAR DE ABAJO SACO DE ACA TMB FIRST EXP Y CCOR CIE
+	test(first(VARIABLE),folset | CCOR_ABR,59);
 	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
 	if(tipo == TIPOARREGLO){
 	    flag = 1;
 	    tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.arr.ptero_tipo_base;
-
-	    /**No pude hacerlo con un switch ya que TIPOINT, TIPOFLOAT y TIPOCHAR se le asignan valores en ejecucion**/
-	    if(tipo == TIPOINT){
-	        tipo = ARRINT;
-	    }
-	    else if(tipo == TIPOFLOAT){
-            tipo = ARRFLOAT;
-        }
-        else if(tipo == TIPOCHAR){
-            tipo = ARRCHAR;
-        }
-        else{
-            tipo = TIPOERROR;
-        }
-
 	}
 	match(CIDENT, 17);
 
@@ -891,22 +838,41 @@ int variable(set folset, int necesito_indice)
 	si, siendo la variable un arreglo, corresponde o no
 	verificar la presencia del subindice */
 
-	if(lookahead_in(CCOR_ABR /*| CCOR_CIE*/)) // (!!!!) Me generaba problemas, muchos errores (Para guardar registro) BORRAR
+	if(lookahead_in(CCOR_ABR))
 	{
 	    if(flag != 1){ //Veo si no tengo un arreglo
             tipo = TIPOERROR;
             error_handler(78); //La variable no es de tipo arreglo
         }
 		match(CCOR_ABR,35);
-		expresion(folset | CCOR_CIE,1); //Controlar que no uso el tipo de esta expresion, solo despues BORRAR ,onda el tipo deberia ser int
+		int tipoaux = expresion(folset | CCOR_CIE,1);
+		if(tipoaux != TIPOINT){ //Control propio ajeno al sistema de tipos
+		    tipo = TIPOERROR;
+		    error_handler(103); //El indice de un arreglo debe ser una constante entera
+		}
 		match(CCOR_CIE, 22);
 	}
 	else{ //Si no hay un CCOR_ABR
 	    if(flag == 1){ //Veo si tengo un arreglo
-	        if(necesito_indice == 1){
+	        if(necesito_indice == 1){ //Por si necesito un elemento para expresion
 	            tipo = TIPOERROR;
                 error_handler(79); //En una expresion los arreglos deben ser accedidos por sus elementos
 	        }
+	        else{ //Por si necesito devolver el tipo del arreglo junto con el tipo base
+                /**No pude hacerlo con un switch ya que TIPOINT, TIPOFLOAT y TIPOCHAR se le asignan valores en ejecucion**/
+                if(tipo == TIPOINT){
+                    tipo = ARRINT;
+                }
+                else if(tipo == TIPOFLOAT){
+                    tipo = ARRFLOAT;
+                }
+                else if(tipo == TIPOCHAR){
+                    tipo = ARRCHAR;
+                }
+                else{
+                    tipo = TIPOERROR;
+                }
+            }
 	    }
 	}
 	test(folset,NADA,60);
@@ -962,15 +928,15 @@ int lista_expresiones(set folset, int posicionTSF)
 	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 	cantidad_parametros_actuales++;
 
-	if(tipo_parametro_actual == -11){
+	if(tipo_parametro_actual == ARRINT){
 	    tipo_parametro_actual = TIPOARREGLO;
 	    tipo_parametro_actual_base = TIPOINT;
 	}
-	else if(tipo_parametro_actual == -12){
+	else if(tipo_parametro_actual == ARRFLOAT){
         tipo_parametro_actual = TIPOARREGLO;
         tipo_parametro_actual_base = TIPOFLOAT;
     }
-    else if(tipo_parametro_actual == -12){
+    else if(tipo_parametro_actual == ARRCHAR){
         tipo_parametro_actual = TIPOARREGLO;
         tipo_parametro_actual_base = TIPOCHAR;
     }
@@ -983,7 +949,7 @@ int lista_expresiones(set folset, int posicionTSF)
 	}
 
 	if(tipo_parametro_actual == TIPOARREGLO){
-        if(ptr_inf_res->tipo_pje != 'd'){ //8/10 DECIDI CAMBIAR ESTE CONTROL DE 'v' a 'd' pq no tiene sentido preguntar por v, un arreglo se pasa por direccion, no por valor, si lo inserto en TS como un pasaje por valor esta mal BORRAR ATENCION Osea, para mi esta mal el 27, tendria que decir direccion en vez de valor
+        if(ptr_inf_res->tipo_pje != 'v'){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
             error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
         }
 	}
@@ -1008,15 +974,15 @@ int lista_expresiones(set folset, int posicionTSF)
 		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 		cantidad_parametros_actuales++;
 
-        if(tipo_parametro_actual == -11){
+        if(tipo_parametro_actual == ARRINT){
             tipo_parametro_actual = TIPOARREGLO;
             tipo_parametro_actual_base = TIPOINT;
         }
-        else if(tipo_parametro_actual == -12){
+        else if(tipo_parametro_actual == ARRFLOAT){
             tipo_parametro_actual = TIPOARREGLO;
             tipo_parametro_actual_base = TIPOFLOAT;
         }
-        else if(tipo_parametro_actual == -12){
+        else if(tipo_parametro_actual == ARRCHAR){
             tipo_parametro_actual = TIPOARREGLO;
             tipo_parametro_actual_base = TIPOCHAR;
         }
@@ -1027,9 +993,15 @@ int lista_expresiones(set folset, int posicionTSF)
         if((tipo_parametro_formal != tipo_parametro_actual) || (tipo_parametro_formal_base != tipo_parametro_actual_base)){
             flag = 1;
         }
+
+        if(tipo_parametro_actual == TIPOARREGLO){
+            if(ptr_inf_res->tipo_pje != 'v'){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
+                error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
+            }
+        }
 	}
 
-	if(flag != 0){
+	if(flag != 0){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
 	    error_handler(91); //El TIPO de los parametros actuales no coincide con el de los parametros formales
 	}
 	return cantidad_parametros_actuales;

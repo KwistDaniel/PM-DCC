@@ -19,7 +19,11 @@ void main(){
     int k[0];
     int l['a'];
     int m,n,o;
+    char p[7];
     m = c || 5;
+    e[0] = 1;
+    c[1] = 1;
+    p[1] = h;
 }
 
 # Linea comentario #
