@@ -1,8 +1,5 @@
 # Parte 2 #
-# ACA SE VERAN LAS COERCIONES #
-# ver cuantas asignaciones tengo, creo que SOLO EN EXPRESION #
-
-
+# Coerciones #
 
 void main(){
     float a;

@@ -10,6 +10,8 @@ void aux(void z){
     int a;
     int b[1],c[1];
     int e[1],f[1];
+    void x;
+    void y[];
     d = 'a';
     b[1] = c;
     e = f;

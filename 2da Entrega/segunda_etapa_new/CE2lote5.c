@@ -7,7 +7,9 @@ void main(){
     cin >> b;
     cin >> a;
     cin >> c[1];
+    cin >> c;
     cout << "hola";
+    cout << c[1] << "De nuevo";
 }
 
 # Linea comentario #
