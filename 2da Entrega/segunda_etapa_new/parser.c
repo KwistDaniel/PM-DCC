@@ -249,7 +249,7 @@ void declaracion_parametro(set folset, int posicionTSF, tipo_inf_res *ptr_inf_re
         ptr_inf_res->ptero_tipo = tipo;
 	}
 
-	insertarTS(); //.Insercion del parametro.
+	insertarTS(); //Insercion del parametro como variable.
 	test(folset,NADA,45);
 }
 
@@ -830,7 +830,12 @@ int variable(set folset, int necesito_indice)
 	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
 	if(tipo == TIPOARREGLO){
 	    flag = 1;
-	    tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.arr.ptero_tipo_base;
+	    if(Clase_Ident(sbol->lexema) == CLASVAR){
+	        tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.arr.ptero_tipo_base;
+	    }
+	    else if (Clase_Ident(sbol->lexema) == CLASPAR){
+	        tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.param.ptero_tipo_base;
+	    }
 	}
 	match(CIDENT, 17);
 
@@ -973,6 +978,7 @@ int lista_expresiones(set folset, int posicionTSF)
 
 		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 		cantidad_parametros_actuales++;
+
 
         if(tipo_parametro_actual == ARRINT){
             tipo_parametro_actual = TIPOARREGLO;

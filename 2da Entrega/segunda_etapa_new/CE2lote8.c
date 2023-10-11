@@ -1,7 +1,19 @@
 # Parte 2 #
 # Coerciones #
+int b[10];
+
+void fun1(int x){
+    x = x+1;
+}
+
+void fun(int y[],int z){
+    fun1(y[z]);
+
+}
 
 void main(){
+    int j[10];
+    int k;
     float a;
     int b;
     char c;
@@ -14,6 +26,7 @@ void main(){
     c = a;
     c = b;
     b = a;
+    fun(j,10);
 }
 
 # Linea comentario #
