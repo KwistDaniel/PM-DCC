@@ -1,1 +1,0 @@
-Errores en la declaracion los pongo como tipo error (caso x ej de la lista de inicializadores con uno distinto al tipo base

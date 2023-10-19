@@ -2,7 +2,7 @@
 #include "parser.h"
 
 int TIPOVOID, TIPOCHAR, TIPOINT, TIPOFLOAT, TIPOARREGLO, TIPOERROR; //Variables que contendran el valor en tabla del tipo que sugiere su nombre
-int ARRCHAR = -41, ARRINT = -42, ARRFLOAT = -43, STRING = -14; //Valores auxiliares para facilitar el uso y comparacion en arreglos y strings
+int ARRCHAR = -41, ARRINT = -42, ARRFLOAT = -43, STRING = -14, VARCHAR = -11, VARINT = -12, VARFLOAT = -13; //Valores auxiliares para facilitar el uso y comparacion en arreglos y strings
  //Los anteriores se implementan en valores negativos para que no conflictuen con valores devueltos por la pila de la tabla de simbolos
 
 enum procedimientos {
@@ -370,6 +370,10 @@ void declarador_init(set folset, int tipo)
 				}
 				match(CLLA_CIE, 25);
 			}
+			if(cantidad_elementos == 0 && sin_dimension == 1){
+			    inf_id->ptr_tipo = TIPOERROR;
+			    error_handler(75); //La cantidad de elementos de un arreglo debe ser mayor a 0
+			}
 			break;
 	}
 	inf_id->clase = CLASVAR;
@@ -522,8 +526,17 @@ void proposicion_iteracion(set folset)
 	match(CPAR_ABR, 20);
 
 	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION),1);
+	if(tipo == VARCHAR){
+        tipo = TIPOCHAR;
+    }
+    else if(tipo == VARINT){
+        tipo = TIPOINT;
+    }
+    else if(tipo == VARFLOAT){
+        tipo = TIPOFLOAT;
+    }
 
-    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
         error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
     }
 
@@ -543,7 +556,17 @@ void proposicion_seleccion(set folset)
 
 	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
 
-    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
+	if(tipo == VARCHAR){
+        tipo = TIPOCHAR;
+    }
+    else if(tipo == VARINT){
+        tipo = TIPOINT;
+    }
+    else if(tipo == VARFLOAT){
+        tipo = TIPOFLOAT;
+    }
+
+    if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
         error_handler(97); //Las condiciones de las prop. de seleccion e iteracion solo pueden ser de tipo char, int y float
     }
 
@@ -575,12 +598,21 @@ void proposicion_e_s(set folset)
                 inf_id->ptr_tipo = TIPOERROR;
                 tipo = TIPOERROR;
                 inf_id->clase = -1; //Le asigno una clase incorrecta
-                scanner(); //Consumo el identificador
                 insertarTS();
             }
-			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
 
-			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
+			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
+			if(tipo == VARCHAR){
+                tipo = TIPOCHAR;
+            }
+            else if(tipo == VARINT){
+                tipo = TIPOINT;
+            }
+            else if(tipo == VARFLOAT){
+                tipo = TIPOFLOAT;
+            }
+
+			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
 			    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
 			}
 			
@@ -589,7 +621,7 @@ void proposicion_e_s(set folset)
 				match(CSHR,30);
 				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
 
-				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
+				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
                 }
 			}
@@ -604,6 +636,15 @@ void proposicion_e_s(set folset)
 			match(CSHL, 31);
 			
 			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
+			if(tipo == VARCHAR){
+                tipo = TIPOCHAR;
+            }
+            else if(tipo == VARINT){
+                tipo = TIPOINT;
+            }
+            else if(tipo == VARFLOAT){
+                tipo = TIPOFLOAT;
+            }
 			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                 error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
             }
@@ -659,6 +700,24 @@ int expresion(set folset, int necesito_indice)
 			case CASIGNAC:
 				scanner();
 				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				if(tipo == VARCHAR){
+                    tipo = TIPOCHAR;
+                }
+                else if(tipo == VARINT){
+                    tipo = TIPOINT;
+                }
+                else if(tipo == VARFLOAT){
+                    tipo = TIPOFLOAT;
+                }
+                if(tipo2 == VARCHAR){
+                    tipo2 = TIPOCHAR;
+                }
+                else if(tipo2 == VARINT){
+                    tipo2 = TIPOINT;
+                }
+                else if(tipo2 == VARFLOAT){
+                    tipo2 = TIPOFLOAT;
+                }
 				if(tipo != tipo2){
 				    if(!( //Aceptacion de Coercion
 				        ((tipo == TIPOFLOAT) &&
@@ -694,6 +753,25 @@ int expresion(set folset, int necesito_indice)
 			case CMAIG:
 				scanner();
 				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				if(tipo == VARCHAR){
+                    tipo = TIPOCHAR;
+                }
+                else if(tipo == VARINT){
+                    tipo = TIPOINT;
+                }
+                else if(tipo == VARFLOAT){
+                    tipo = TIPOFLOAT;
+                }
+                if(tipo2 == VARCHAR){
+                    tipo2 = TIPOCHAR;
+                }
+                else if(tipo2 == VARINT){
+                    tipo2 = TIPOINT;
+                }
+                else if(tipo2 == VARFLOAT){
+                    tipo2 = TIPOFLOAT;
+                }
+
 				if(tipo != tipo2){
 				    // Posible implementacion de COERCION a futuro
                     tipo = TIPOERROR;
@@ -725,6 +803,24 @@ int expresion_simple(set folset, int necesito_indice)
 	{
 		match(CMAS | CMENOS | COR,65);
 		tipo2 = termino(folset | CMAS | CMENOS | COR | first(TERMINO), 1);
+		if(tipo == VARCHAR){
+            tipo = TIPOCHAR;
+        }
+        else if(tipo == VARINT){
+            tipo = TIPOINT;
+        }
+        else if(tipo == VARFLOAT){
+            tipo = TIPOFLOAT;
+        }
+        if(tipo2 == VARCHAR){
+            tipo2 = TIPOCHAR;
+        }
+        else if(tipo2 == VARINT){
+            tipo2 = TIPOINT;
+        }
+        else if(tipo2 == VARFLOAT){
+            tipo2 = TIPOFLOAT;
+        }
 
 		if(tipo != tipo2){
             // Posible implementacion de COERCION a futuro
@@ -751,6 +847,24 @@ int termino(set folset, int necesito_indice)
 	{
 		match(CMULT | CDIV | CAND,65);
 		tipo2 = factor(folset | CMULT | CDIV | CAND | first(FACTOR), 1);
+		if(tipo == VARCHAR){
+            tipo = TIPOCHAR;
+        }
+        else if(tipo == VARINT){
+            tipo = TIPOINT;
+        }
+        else if(tipo == VARFLOAT){
+            tipo = TIPOFLOAT;
+        }
+        if(tipo2 == VARCHAR){
+            tipo2 = TIPOCHAR;
+        }
+        else if(tipo2 == VARINT){
+            tipo2 = TIPOINT;
+        }
+        else if(tipo2 == VARFLOAT){
+            tipo2 = TIPOFLOAT;
+        }
 		if(tipo != tipo2){
             // Posible implementacion de COERCION a futuro
             tipo = TIPOERROR;
@@ -828,6 +942,7 @@ int variable(set folset, int necesito_indice)
 {
 	test(first(VARIABLE),folset | CCOR_ABR,59);
 	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
+
 	if(tipo == TIPOARREGLO){
 	    flag = 1;
 	    if(Clase_Ident(sbol->lexema) == CLASVAR){
@@ -836,6 +951,9 @@ int variable(set folset, int necesito_indice)
 	    else if (Clase_Ident(sbol->lexema) == CLASPAR){
 	        tipo = ts[en_tabla(sbol->lexema)].ets->desc.part_var.param.ptero_tipo_base;
 	    }
+	    else{
+	        tipo = TIPOERROR;
+        }
 	}
 	match(CIDENT, 17);
 
@@ -855,6 +973,15 @@ int variable(set folset, int necesito_indice)
 		    tipo = TIPOERROR;
 		    error_handler(103); //El indice de un arreglo debe ser una constante entera
 		}
+		if(tipo == TIPOCHAR){
+            tipo = VARCHAR;
+        }
+        else if(tipo == TIPOINT){
+            tipo = VARINT;
+        }
+        else if(tipo == TIPOFLOAT){
+            tipo = VARFLOAT;
+        }
 		match(CCOR_CIE, 22);
 	}
 	else{ //Si no hay un CCOR_ABR
@@ -877,6 +1004,17 @@ int variable(set folset, int necesito_indice)
                 else{
                     tipo = TIPOERROR;
                 }
+            }
+	    }
+	    else{
+	        if(tipo == TIPOCHAR){
+                tipo = VARCHAR;
+            }
+            else if(tipo == TIPOINT){
+                tipo = VARINT;
+            }
+            else if(tipo == TIPOFLOAT){
+                tipo = VARFLOAT;
             }
 	    }
 	}
@@ -933,6 +1071,36 @@ int lista_expresiones(set folset, int posicionTSF)
 	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 	cantidad_parametros_actuales++;
 
+	if(ptr_inf_res->tipo_pje == 'd'){
+        if(tipo_parametro_actual == VARCHAR || tipo_parametro_actual == VARINT || tipo_parametro_actual == VARFLOAT){
+            if(tipo_parametro_actual == VARCHAR){
+                tipo_parametro_actual = TIPOCHAR;
+            }
+            else if(tipo_parametro_actual == VARINT){
+                tipo_parametro_actual = TIPOINT;
+            }
+            else if(tipo_parametro_actual == VARFLOAT){
+                tipo_parametro_actual = TIPOFLOAT;
+            }
+        }
+        else{
+            if((tipo_parametro_actual != ARRCHAR) && (tipo_parametro_actual != ARRINT) && (tipo_parametro_actual != ARRFLOAT)){
+                error_handler(93); //Si el pasaje es por REFERENCIA, el parametro real debe ser una variable
+            }
+        }
+    }
+    else{
+        if(tipo_parametro_actual == VARCHAR){
+            tipo_parametro_actual = TIPOCHAR;
+        }
+        else if(tipo_parametro_actual == VARINT){
+            tipo_parametro_actual = TIPOINT;
+        }
+        else if(tipo_parametro_actual == VARFLOAT){
+            tipo_parametro_actual = TIPOFLOAT;
+        }
+    }
+
 	if(tipo_parametro_actual == ARRINT){
 	    tipo_parametro_actual = TIPOARREGLO;
 	    tipo_parametro_actual_base = TIPOINT;
@@ -953,10 +1121,8 @@ int lista_expresiones(set folset, int posicionTSF)
 	    flag = 1;
 	}
 
-	if(tipo_parametro_actual == TIPOARREGLO){
-        if(ptr_inf_res->tipo_pje != 'v'){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
-            error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
-        }
+	if((tipo_parametro_formal == TIPOARREGLO) && (tipo_parametro_actual != TIPOARREGLO)){
+	    error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
 	}
 
 	while(lookahead_in(CCOMA | first(EXPRESION)))
@@ -979,6 +1145,35 @@ int lista_expresiones(set folset, int posicionTSF)
 		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
 		cantidad_parametros_actuales++;
 
+		if(ptr_inf_res->tipo_pje == 'd'){
+            if(tipo_parametro_actual == VARCHAR || tipo_parametro_actual == VARINT || tipo_parametro_actual == VARFLOAT){
+                if(tipo_parametro_actual == VARCHAR){
+                    tipo_parametro_actual = TIPOCHAR;
+                }
+                else if(tipo_parametro_actual == VARINT){
+                    tipo_parametro_actual = TIPOINT;
+                }
+                else if(tipo_parametro_actual == VARFLOAT){
+                    tipo_parametro_actual = TIPOFLOAT;
+                }
+            }
+            else{
+                if((tipo_parametro_actual != ARRCHAR) && (tipo_parametro_actual != ARRINT) && (tipo_parametro_actual != ARRFLOAT)){
+                    error_handler(93); //Si el pasaje es por REFERENCIA, el parametro real debe ser una variable
+                }
+            }
+        }
+        else{
+            if(tipo_parametro_actual == VARCHAR){
+                tipo_parametro_actual = TIPOCHAR;
+            }
+            else if(tipo_parametro_actual == VARINT){
+                tipo_parametro_actual = TIPOINT;
+            }
+            else if(tipo_parametro_actual == VARFLOAT){
+                tipo_parametro_actual = TIPOFLOAT;
+            }
+        }
 
         if(tipo_parametro_actual == ARRINT){
             tipo_parametro_actual = TIPOARREGLO;
@@ -1000,10 +1195,8 @@ int lista_expresiones(set folset, int posicionTSF)
             flag = 1;
         }
 
-        if(tipo_parametro_actual == TIPOARREGLO){
-            if(ptr_inf_res->tipo_pje != 'v'){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
-                error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
-            }
+        if((tipo_parametro_formal == TIPOARREGLO) && (tipo_parametro_actual != TIPOARREGLO)){
+            error_handler(98); //Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador
         }
 	}
 
