@@ -1,1 +1,0 @@
-Problema con first de LISTA_PROPOSICIONES que causaba un error en donde no habia (faltaban elementos del first (error 51))
