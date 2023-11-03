@@ -30,3 +30,19 @@ también deben ser almacenadas en otra estructura auxiliar de las mismas caracte
 que la zona de constantes string C de la MAC.
     Para generar el archivo objeto programa.o utilice la función guardar_codgen provista en
 el archivo sistejec.c.
+
+
+
+
+cada vez que tengo un pushTB hacer:
+CODE[libreCODE++] = get_nivel();
+y lo mismo para el pop, pero antes del pop poner el getnivel
+
+
+
+
+
+todo:
+    - Ver que el control en facto de string que no se pase el tama'o este bien (y que copie bien)
+    - completar en el infid el desplazamiento (ver si completaba el nivel, sino tambien agregarlo) (definicion de funciones no)
+    - proposicion de expresion se implementa

@@ -11,9 +11,7 @@ float CODE[TAM_PROG];
 int libreCODE = 0;           				// próximo libre del programa
 
 char CAUX[TAM_CTES];
-int libreCAUX = 0;
-
-int ERR=0;
+int libreCAUX = 0; //Si uso strcat esto en 0 o ir agregando pos a pos del tama'o del lexema (si hago esta segunda borrar la inicializacion de arriba)
 
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
@@ -26,6 +24,7 @@ enum procedimientos {
 
 int main(int argc, char *argv[])
 {
+
 	init_parser(argc, argv);
 
     // Manejo inicial de la tabla de simbolos
@@ -36,20 +35,23 @@ int main(int argc, char *argv[])
     TIPOFLOAT = en_tabla("float");
     TIPOARREGLO = en_tabla("TIPOARREGLO");
     TIPOERROR = en_tabla("TIPOERROR");
+
+    CODE[libreCODE++] = INPP;
+
     pushTB();//Bloq 0
 
+	CODE[libreCODE++] = ENBL;
+	CODE[libreCODE++] = get_nivel();
 
-	CODE[libreCODE++] = INPP;
+
+
 	unidad_traduccion(CEOF);
 
     if(en_tabla("main") == NIL){ //Control para revisar que se haya creado una funcion main
         error_handler(84); //Falta declarar la funcion main()
-        ERR = 1;
     }
-    if(ERR == 0){
-        CODE[libreCODE] = PARAR;
-        //aca recordar guardar codigo generado
-    }
+    CODE[libreCODE++] = FINB;
+    CODE[libreCODE++] = get_nivel();
 
 	pop_nivel();
 
@@ -60,6 +62,12 @@ int main(int argc, char *argv[])
 	last_call=1;
 
 	error_handler(COD_IMP_ERRORES);
+
+	if(GEN){
+        CODE[libreCODE] = PARAR;
+        //aca recordar guardar codigo generado, esto era llamar funcion del sistejec
+        //Lo llamo con code, con caux y el argv[2] del main que tiene el nombre del archivo, capaz que tengo que parsear, iterar hasta encontrar el . y ahi reemplazo .c por .o y ahi lo puedo pasar
+    }
 
 	return 0;
 }
@@ -662,9 +670,19 @@ void proposicion_e_s(set folset)
             else if(tipo == VARFLOAT){
                 tipo = TIPOFLOAT;
             }
+
 			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                 error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
             }
+
+
+            /*Ver donde acomodo*/
+            if(tipo == STRING){
+
+            }
+
+
+
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
@@ -932,6 +950,22 @@ int factor(set folset, int necesito_indice)
 		
 		case CCONS_STR:
 		    tipo = STRING; //Tipo auxiliar para comprobacion en proposicion_e_s en salida
+		    CODE[libreCODE++] = CRCTS;
+		    CODE[libreCODE++] = libreCAUX;
+		    int i=0;
+		    while(sbol->lexema[i] != '\0'){ //Copio el Lexema a la zona strings
+		        if(libreCAUX == TAM_CTES){
+		            error_handler(xxxx);//DAR CODIGO DE ERROR QUE ME PASE
+		        }
+		        CAUX[libreCAUX++] = sbol->lexema[i++];
+		    }
+		    if(libreCAUX == TAM_CTES){
+                error_handler(xxxx);//DAR CODIGO DE ERROR QUE ME PASE
+            }
+            else{
+                CAUX[libreCAUX++] = '\0';
+            }
+
 			scanner();
 			break;
 		

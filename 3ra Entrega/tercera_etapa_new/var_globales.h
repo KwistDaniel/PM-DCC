@@ -15,3 +15,5 @@ int nro_linea;
 token token1;
 
 extern int yylex(void);
+
+int GEN = 1;

@@ -123,7 +123,8 @@ void error_print(int ne)
 
 
 void error_handler(int ne)
-{	
+{
+GEN = 0; //Frenar generacion de codigo
 int i;
 hubo_error++;
 if(last_call){
