@@ -1,0 +1,32 @@
+Errorhandler tiene que alterar variable global GEN para que no genere mas cod intermedio
+
+Se deberá generar el código, en un archivo .o, al menos para las siguientes construcciones:
+    - Declaración de variables simples.
+    - Proposición de entrada-salida.
+    - Expresiones en general.
+
+Nota: Cada estudiante deberá decidir si genera código para la proposición de selección o bien
+para la proposición de iteración.
+
+Elegir una:
+    - Proposición de selección.
+    - Proposición de iteración.
+
+Iteracion es mas entretenida, seleccion es mas simple
+
+Si el programa a compilar tiene errores, los mismos deben ser mostrados y no se debe generar
+código.
+Si el programa a compilar es correcto, el comando ucc -c programa.c debe generar código en el archivo programa.o. Luego, con el comando ucc -o programa.o se ejecutará el
+programa.
+
+Consideraciones:
+    Utilice en su código parser, una variable de las mismas características que la memoria de
+programa P de la máquina abstracta C, donde ir almacenando el código generado. Si por
+ejemplo esa variable se llama CODE, antes de comenzar a generar el código del programa
+propiamente dicho, CODE[0] debe contener la instrucción INPP y en su última posición debe
+contener PARAR. Entre estas dos instrucciones de la MAC se debe encontrar todo el programa
+generado. En el caso de que el programa a compilar tuviese constantes de tipo string, éstas
+también deben ser almacenadas en otra estructura auxiliar de las mismas características
+que la zona de constantes string C de la MAC.
+    Para generar el archivo objeto programa.o utilice la función guardar_codgen provista en
+el archivo sistejec.c.
