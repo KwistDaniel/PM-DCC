@@ -402,6 +402,15 @@ void declarador_init(set folset, int tipo)
 			break;
 	}
 	inf_id->clase = CLASVAR;
+
+	if(inf_id->tipo == TIPOARREGLO){ //Asigno la cantidad de bytes que ocupa
+	    inf_id->cant_byte = (inf_id->desc.part_var.arr.cant_elem * sizeof(inf_id->desc.part_var.arr.ptero_tipo_base));
+	}
+	else{
+	    inf_id->cant_byte = sizeof(inf_id->tipo);
+	}
+
+
 	insertarTS();
 	test(folset,NADA,48);
 }
