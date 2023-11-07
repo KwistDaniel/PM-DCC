@@ -1,3 +1,5 @@
+Devolucion: Es dificil esta etapa sin saber que datos se necesitan guardar/conocer para generar codigo, hay cosas que hice en la segunda etapa que no son NADA optimas en esta tercera, por lo cual es menos eficiente, si se supiera de antemano algunas cuestiones o se hubieran dado sugerencia de como tratar algunas cosas ya que en el futuro se iba a necesitar tratar estas cuestiones de geneacion de codigo, tanto la segunda etapa como tercera serian mas faciles de implementar (quizas la segunda cueste un tok mas, pero se logra un buen resultado) y se puede integrar mucho mas facil la 3ra. Literalmente estoy haciendo malabares, falle en no estar devolviendo un registro como lo pense al principio de expresion y toda la bajada hasta factor, esto me dejaria guardar info necesaria que tengo que guardar en var globales y encima despues tengo que hacer consultas a la TS
+
 Errorhandler tiene que alterar variable global GEN para que no genere mas cod intermedio
 
 Se deberá generar el código, en un archivo .o, al menos para las siguientes construcciones:
@@ -43,6 +45,19 @@ y lo mismo para el pop, pero antes del pop poner el getnivel
 
 
 todo:
-    - Ver que el control en facto de string que no se pase el tama'o este bien (y que copie bien)
+    - Ver que el control en factor de string que no se pase el tama'o este bien (y que copie bien)
     - completar en el infid el desplazamiento (ver si completaba el nivel, sino tambien agregarlo) (definicion de funciones no)
     - proposicion de expresion se implementa
+
+
+
+
+
+todo:
+    . ver como resolver si necesito hacer un cargar valor o almacenar valor, capaz que un flag mas/parametro mas (pq cuando llamo a variable capaz quiero cargarle un valor, y no consultarlo.
+    . while
+    . e/s
+    . expresion (asignacion y relacion)
+    . relacion comparadores, creo que deberia devolver el cod
+    .
+

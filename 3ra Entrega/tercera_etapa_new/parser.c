@@ -13,6 +13,10 @@ int libreCODE = 0;           				// próximo libre del programa
 char CAUX[TAM_CTES];
 int libreCAUX = 0; //Si uso strcat esto en 0 o ir agregando pos a pos del tama'o del lexema (si hago esta segunda borrar la inicializacion de arriba)
 
+char lexema_aux_izq[200]; //Para guardar el lexema del lado izquierdo a un operador por si es lado izquierdo de una asignacion.
+int guarde_variable = 0;
+int desplazamiento = 0;
+
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
 	DEFINICION_FUNCION, LISTA_DECLARACION_PARAM, DECLARACION_PARAMETRO, DECLARACION_VARIABLE,
@@ -24,6 +28,10 @@ enum procedimientos {
 
 int main(int argc, char *argv[])
 {
+    char lote[100];
+    strcpy(lote, argv[2]);
+    int length = strlen(lote);
+    lote[length - 1] = 'o';
 
 	init_parser(argc, argv);
 
@@ -42,8 +50,6 @@ int main(int argc, char *argv[])
 
 	CODE[libreCODE++] = ENBL;
 	CODE[libreCODE++] = get_nivel();
-
-
 
 	unidad_traduccion(CEOF);
 
@@ -65,6 +71,8 @@ int main(int argc, char *argv[])
 
 	if(GEN){
         CODE[libreCODE] = PARAR;
+        guardar_codgen(CODE, CAUX, lote);
+        cargar_codgen(lote);
         //aca recordar guardar codigo generado, esto era llamar funcion del sistejec
         //Lo llamo con code, con caux y el argv[2] del main que tiene el nombre del archivo, capaz que tengo que parsear, iterar hasta encontrar el . y ahi reemplazo .c por .o y ahi lo puedo pasar
     }
@@ -321,6 +329,24 @@ void declarador_init(set folset, int tipo)
 	int dimension = -1, sin_dimension = -1, tipo2;
 
     inf_id->ptr_tipo = tipo;
+    if(tipo != TIPOARREGLO){
+        if(tipo == TIPOCHAR){ //No me deja switch
+            inf_id->cant_byte = sizeof(char);
+        }
+        else if(tipo == TIPOINT){
+            inf_id->cant_byte = sizeof(int);
+        }
+        else if(tipo == TIPOFLOAT){
+            inf_id->cant_byte = sizeof(float);
+        }
+        inf_id->desc.nivel = get_nivel();
+        inf_id->desc.despl = desplazamiento;
+        desplazamiento += inf_id->cant_byte;
+        if(GEN){
+            CODE[libreCODE++] = ALOC;
+            CODE[libreCODE++] = inf_id->cant_byte;
+        }
+    }
 
 	switch(lookahead())
 	{
@@ -334,8 +360,13 @@ void declarador_init(set folset, int tipo)
                 error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
             }
 			inf_id->ptr_tipo = tipo;
+			if(GEN){
+			    CODE[libreCODE++] = ALM;
+                CODE[libreCODE++] = inf_id->desc.nivel;
+                CODE[libreCODE++] = inf_id->desc.despl;
+                CODE[libreCODE++] = inf_id->cant_byte;
+			}
 			break;
-
         case CLLA_ABR:
         case CLLA_CIE:
         case CCOR_CIE:
@@ -402,14 +433,6 @@ void declarador_init(set folset, int tipo)
 			break;
 	}
 	inf_id->clase = CLASVAR;
-
-	if(inf_id->tipo == TIPOARREGLO){ //Asigno la cantidad de bytes que ocupa
-	    inf_id->cant_byte = (inf_id->desc.part_var.arr.cant_elem * sizeof(inf_id->desc.part_var.arr.ptero_tipo_base));
-	}
-	else{
-	    inf_id->cant_byte = sizeof(inf_id->tipo);
-	}
-
 
 	insertarTS();
 	test(folset,NADA,48);
@@ -559,7 +582,7 @@ void proposicion_iteracion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION),1);
+	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION),1,0);
 	if(tipo == VARCHAR){
         tipo = TIPOCHAR;
     }
@@ -588,7 +611,7 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1);
+	tipo = expresion(folset | CPAR_CIE | first(PROPOSICION) | CELSE,1,0);
 
 	if(tipo == VARCHAR){
         tipo = TIPOCHAR;
@@ -635,28 +658,59 @@ void proposicion_e_s(set folset)
                 insertarTS();
             }
 
-			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1);
+			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1,1); //BORRAR ACA PUSE UN 1 PORQUE TENGO QUE ASIGNAR CREO
+			int tam_tipo;
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
+                tam_tipo = sizeof(char);
             }
             else if(tipo == VARINT){
                 tipo = TIPOINT;
+                tam_tipo = sizeof(int);
             }
             else if(tipo == VARFLOAT){
                 tipo = TIPOFLOAT;
+                tam_tipo = sizeof(float);
             }
 
 			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
 			    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
 			}
-			
+			if(GEN){
+			    CODE[libreCODE++] = LEER;
+			    CODE[libreCODE++] = tam_tipo;
+			    CODE[libreCODE++] = ALM;
+			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+			}
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
 				match(CSHR,30);
-				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1);
-
+				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1,1); //BORRAR ACA PUSE UN 1 PORQUE TENGO QUE ASIGNAR CREO
+                int tam_tipo;
+                if(tipo == VARCHAR){
+                    tipo = TIPOCHAR;
+                    tam_tipo = sizeof(char);
+                }
+                else if(tipo == VARINT){
+                    tipo = TIPOINT;
+                    tam_tipo = sizeof(int);
+                }
+                else if(tipo == VARFLOAT){
+                    tipo = TIPOFLOAT;
+                    tam_tipo = sizeof(float);
+                }
 				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+                }
+                if(GEN){
+                    CODE[libreCODE++] = LEER;
+                    CODE[libreCODE++] = tam_tipo;
+                    CODE[libreCODE++] = ALM;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
                 }
 			}
 
@@ -669,7 +723,7 @@ void proposicion_e_s(set folset)
 
 			match(CSHL, 31);
 			
-			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1);
+			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1,0);
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
             }
@@ -695,7 +749,7 @@ void proposicion_e_s(set folset)
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
-				tipo = expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1);
+				tipo = expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1,0);
 				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
                 }
@@ -715,7 +769,7 @@ void proposicion_retorno(set folset)
 {
 	scanner();
 	
-	expresion(folset | CPYCOMA,1);
+	expresion(folset | CPYCOMA,1,0);
 	
 	match(CPYCOMA, 23);
 	test(folset,NADA,54);
@@ -725,17 +779,17 @@ void proposicion_retorno(set folset)
 void proposicion_expresion(set folset)
 {
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
-		expresion(folset | CPYCOMA,1);
+		expresion(folset | CPYCOMA,1,1);
 
 	match(CPYCOMA, 23);
 	test(folset,NADA,55);
 }
 
 
-int expresion(set folset, int necesito_indice)
+int expresion(set folset, int necesito_indice, int posible_asignacion)
 {
-    int tipo, tipo2;
-	tipo = expresion_simple(folset | CASIGNAC | first(EXPRESION_SIMPLE) | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, necesito_indice);
+    int tipo, tipo2, cargue_izquierdo = 0;
+	tipo = expresion_simple(folset | CASIGNAC | first(EXPRESION_SIMPLE) | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, necesito_indice, posible_asignacion);
 
 	while(lookahead_in(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG))
 	{
@@ -743,7 +797,7 @@ int expresion(set folset, int necesito_indice)
 		{
 			case CASIGNAC:
 				scanner();
-				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1,0);
 				if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
                 }
@@ -762,7 +816,7 @@ int expresion(set folset, int necesito_indice)
                 else if(tipo2 == VARFLOAT){
                     tipo2 = TIPOFLOAT;
                 }
-				if(tipo != tipo2){
+				if(tipo != tipo2){ ACA VER QUE TENGO QUE HACER CAST JE
 				    if(!( //Aceptacion de Coercion
 				        ((tipo == TIPOFLOAT) &&
 				            ((tipo2 == TIPOINT) || (tipo2 == TIPOCHAR)) //Float acepta casteo de Int y Char
@@ -787,6 +841,15 @@ int expresion(set folset, int necesito_indice)
 				        }
 				    }
 				}
+				if(GEN){
+				    CODE[libreCODE++] = ALM;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                    cargue_izquierdo = 1;
+				}
+				strcpy(lexema_aux_izq,"");
+                guarde_variable = 0;
 				break;
 				
 			case CDISTINTO:
@@ -795,8 +858,50 @@ int expresion(set folset, int necesito_indice)
 			case CMEIG:
 			case CMAYOR:
 			case CMAIG:
+			    if(guarde_variable == 1){
+			        if(GEN){
+			            int tam_tipo;
+			            if(tipo == TIPOCHAR){
+			                tam_tipo = sizeof(char);
+			            }
+			            else if(tipo == TIPOINT){
+			                tam_tipo = sizeof(int);
+			            }
+			            else if(tipo == TIPOFLOAT){
+			                tam_tipo = sizeof(float);
+			            }
+                        CODE[libreCODE++] = CRVL;
+                        CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+                        CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+                        CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                        cargue_izquierdo = 1;
+                    }
+                    strcpy(lexema_aux_izq,"");
+                    guarde_variable = 0;
+                }
+			    int operador = 0;
+                switch(lookahead()){ //Guardo el operador para cargarlo luego
+                    case CDISTINTO:
+                        operador = 1;
+                        break;
+                    case CIGUAL:
+                        operador = 2;
+                        break;
+                    case CMENOR:
+                        operador = 3;
+                        break;
+                    case CMEIG:
+                        operador = 4;
+                        break;
+                    case CMAYOR:
+                        operador = 5;
+                        break;
+                    case CMAIG:
+                        operador = 6;
+                        break;
+                }
 				scanner();
-				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1);
+				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1,0);
 				if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
                 }
@@ -827,26 +932,86 @@ int expresion(set folset, int necesito_indice)
                         error_handler(96); //Los operandos de los operadores logicos o relacionales solo pueden ser de tipo char, int o float
                     }
                 }
-				break;
+                if(GEN){
+                    int tam_tipo;
+                    if(tipo2 == TIPOCHAR){
+                        tam_tipo = sizeof(char);
+                    }
+                    else if(tipo2 == TIPOINT){
+                        tam_tipo = sizeof(int);
+                    }
+                    else if(tipo2 == TIPOFLOAT){
+                        tam_tipo = sizeof(float);
+                    }
+                     switch(operador){ //Cargo el operador guardado
+                        case 1: //DISTINTO
+                            CODE[libreCODE++] = CMNI;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                        case 2: //CIGUAL
+                            CODE[libreCODE++] = CMIG;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                        case 3: //CMENOR
+                            CODE[libreCODE++] = CMME;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                        case 4: //CMEIG
+                            CODE[libreCODE++] = CMEI;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                        case 5: //CMAYOR
+                            CODE[libreCODE++] = CMMA;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                        case 6: //CMAIG
+                            CODE[libreCODE++] = CMAI;
+                            CODE[libreCODE++] = tam_tipo;
+                            break;
+                    }
+                }
+                break;
+		}
+		if (cargue_izquierdo == 0){
+		    if(GEN){
+                CODE[libreCODE++] = CRVL;
+                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+		    }
+		    strcpy(lexema_aux_izq,"");
+            guarde_variable = 0;
 		}
 	}
 	return tipo;
 }
 
 
-int expresion_simple(set folset, int necesito_indice)
+int expresion_simple(set folset, int necesito_indice, int posible_asignacion)
 {
     int tipo, tipo2;
 	test(first(EXPRESION_SIMPLE),folset | COR,56);
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 
-	tipo = termino(folset | CMAS | CMENOS | COR | first(TERMINO), necesito_indice);
+	tipo = termino(folset | CMAS | CMENOS | COR | first(TERMINO), necesito_indice, posible_asignacion);
 
 	while(lookahead_in(CMAS | CMENOS | COR | first(TERMINO)))
 	{
+	    int operador = 0;
+        switch(lookahead()){ //Guardo el operador para cargarlo luego
+            case CMAS:
+                operador = 1;
+                break;
+            case CMENOS:
+                operador = 2;
+                break;
+            case COR:
+                operador = 3;
+                break;
+        }
 		match(CMAS | CMENOS | COR,65);
-		tipo2 = termino(folset | CMAS | CMENOS | COR | first(TERMINO), 1);
+		tipo2 = termino(folset | CMAS | CMENOS | COR | first(TERMINO), 1, 0);
 		if(tipo == VARCHAR){
             tipo = TIPOCHAR;
         }
@@ -877,20 +1042,58 @@ int expresion_simple(set folset, int necesito_indice)
                 error_handler(106); //Los operandos de los operadores logicos o aritmeticos solo pueden ser de tipo char, int o float
             }
         }
+        if(GEN){
+            int tam_tipo;
+            if(tipo2 == TIPOCHAR){
+                tam_tipo = sizeof(char);
+            }
+            else if(tipo2 == TIPOINT){
+                tam_tipo = sizeof(int);
+            }
+            else if(tipo2 == TIPOFLOAT){
+                tam_tipo = sizeof(float);
+            }
+            switch(operador){ //Cargo el operador guardado
+                case 1:
+                    CODE[libreCODE++] = SUM;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+                case 2:
+                    CODE[libreCODE++] = SUB;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+                case 3:
+                    CODE[libreCODE++] = OR;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+            }
+        }
 	}
 	return tipo;
 }
 
 
-int termino(set folset, int necesito_indice)
+int termino(set folset, int necesito_indice, int posible_asignacion)
 {
     int tipo, tipo2;
-	tipo = factor(folset | CMULT | CDIV | CAND | first(FACTOR), necesito_indice);
+	tipo = factor(folset | CMULT | CDIV | CAND | first(FACTOR), necesito_indice, posible_asignacion);
 
 	while(lookahead_in(CMULT | CDIV | CAND | first(FACTOR)))
 	{
+	    int operador = 0;
+	    switch(lookahead()){ //Guardo el operador para cargarlo luego
+	        case CMULT:
+                operador = 1;
+                break;
+            case CDIV:
+                operador = 2;
+                break;
+            case CAND:
+                operador = 3;
+                break;
+	    }
 		match(CMULT | CDIV | CAND,65);
-		tipo2 = factor(folset | CMULT | CDIV | CAND | first(FACTOR), 1);
+		tipo2 = factor(folset | CMULT | CDIV | CAND | first(FACTOR), 1, 0);
 		if(tipo == VARCHAR){
             tipo = TIPOCHAR;
         }
@@ -920,12 +1123,38 @@ int termino(set folset, int necesito_indice)
                 error_handler(106); //Los operandos de los operadores logicos o aritmeticos solo pueden ser de tipo char, int o float
             }
         }
+        if(GEN){
+            int tam_tipo;
+            if(tipo2 == TIPOCHAR){
+                tam_tipo = sizeof(char);
+            }
+            else if(tipo2 == TIPOINT){
+                tam_tipo = sizeof(int);
+            }
+            else if(tipo2 == TIPOFLOAT){
+                tam_tipo = sizeof(float);
+            }
+            switch(operador){ //Cargo el operador guardado
+                case 1:
+                    CODE[libreCODE++] = MUL;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+                case 2:
+                    CODE[libreCODE++] = DIV;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+                case 3:
+                    CODE[libreCODE++] = AND;
+                    CODE[libreCODE++] = tam_tipo;
+                    break;
+            }
+        }
 	}
 	return tipo;
 }
 
 
-int factor(set folset, int necesito_indice)
+int factor(set folset, int necesito_indice, int posible_asignacion)
 {
 	test(first(FACTOR), folset /*| CPAR_CIE*/,57); //Ver si saco CPAR_CIE por lote: if(k==) a;
 	/** Lo tuve que sacar por lote propio: lote3ce.c en linea 21: f1(ab,); se colgaba la ejecucion **/
@@ -947,7 +1176,7 @@ int factor(set folset, int necesito_indice)
 		        tipo = llamada_funcion(folset);
 		    }
 		    else{
-		        tipo = variable(folset, necesito_indice);
+		        tipo = variable(folset, necesito_indice, posible_asignacion);
 		    }
 			break;
 		
@@ -980,13 +1209,13 @@ int factor(set folset, int necesito_indice)
 		
 		case CPAR_ABR:
 			match(CPAR_ABR,20);
-			tipo = expresion(folset | CPAR_CIE,1);
+			tipo = expresion(folset | CPAR_CIE,1,0); //BORRAR PUSE UN 0 PORQUE NO SE EVALUA POR ACA
 			match(CPAR_CIE, 21);
 			break;
 			
 		case CNEG:
 			scanner();
-			tipo = expresion(folset,1);
+			tipo = expresion(folset,1,0); //BORRAR PUSE UN 0 PORQUE NO SE EVALUA POR ACA
 			break;
 			
 		default:
@@ -998,9 +1227,11 @@ int factor(set folset, int necesito_indice)
 }
 
 
-int variable(set folset, int necesito_indice)
+int variable(set folset, int necesito_indice, int posible_asignacion)
 {
 	test(first(VARIABLE),folset | CCOR_ABR,59);
+	char lexema_aux[200];
+	strcpy(lexema_aux,sbol->lexema);
 	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
 
 	if(tipo == TIPOARREGLO){
@@ -1017,10 +1248,6 @@ int variable(set folset, int necesito_indice)
 	}
 	match(CIDENT, 17);
 
-	/* El alumno debera verificar con una consulta a TS
-	si, siendo la variable un arreglo, corresponde o no
-	verificar la presencia del subindice */
-
 	if(lookahead_in(CCOR_ABR))
 	{
 	    if(flag != 1){ //Veo si no tengo un arreglo
@@ -1028,7 +1255,7 @@ int variable(set folset, int necesito_indice)
             error_handler(78); //La variable no es de tipo arreglo
         }
 		match(CCOR_ABR,35);
-		int tipoaux = expresion(folset | CCOR_CIE,1);
+		int tipoaux = expresion(folset | CCOR_CIE,1,0);
 		if(tipoaux != TIPOINT){ //Control propio ajeno al sistema de tipos
 		    tipo = TIPOERROR;
 		    error_handler(103); //El indice de un arreglo debe ser una constante entera
@@ -1042,6 +1269,7 @@ int variable(set folset, int necesito_indice)
         else if(tipo == TIPOFLOAT){
             tipo = VARFLOAT;
         }
+
 		match(CCOR_CIE, 22);
 	}
 	else{ //Si no hay un CCOR_ABR
@@ -1052,6 +1280,7 @@ int variable(set folset, int necesito_indice)
 	        }
 	        else{ //Por si necesito devolver el tipo del arreglo junto con el tipo base
                 /**No pude hacerlo con un switch ya que TIPOINT, TIPOFLOAT y TIPOCHAR se le asignan valores en ejecucion**/
+
                 if(tipo == TIPOINT){
                     tipo = ARRINT;
                 }
@@ -1067,6 +1296,18 @@ int variable(set folset, int necesito_indice)
             }
 	    }
 	    else{
+	        if(posible_asignacion == 1){ //Puedo llegar a necesitar asignarle un valor a esta variable.
+	            strcpy(lexema_aux_izq,lexema_aux);
+	            guarde_variable = 1;
+	        }
+	        else{
+	            if(GEN){
+	                CODE[libreCODE++] = CRVL;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.nivel;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.despl;
+                    CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->cant_byte;
+	            }
+	        }
 	        if(tipo == TIPOCHAR){
                 tipo = VARCHAR;
             }
@@ -1128,7 +1369,7 @@ int lista_expresiones(set folset, int posicionTSF)
         tipo_parametro_formal = TIPOERROR; //Por si no tengo definidos parametros
     }
 
-	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
+	tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0,0); // No se evaluan llamados a funciones
 	cantidad_parametros_actuales++;
 
 	if(ptr_inf_res->tipo_pje == 'd'){
@@ -1202,7 +1443,7 @@ int lista_expresiones(set folset, int posicionTSF)
 		    tipo_parametro_formal = TIPOERROR;
 		}
 
-		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0);
+		tipo_parametro_actual = expresion(folset | CCOMA | first(EXPRESION), 0,0); // No se evaluan llamados a funciones
 		cantidad_parametros_actuales++;
 
 		if(ptr_inf_res->tipo_pje == 'd'){
@@ -1275,16 +1516,31 @@ int constante(set folset)
 	{
 		case CCONS_ENT:
 		    tipo = TIPOINT;
+		    if(GEN){
+                CODE[libreCODE++] = CRCT;
+                CODE[libreCODE++] = sizeof(float);
+                CODE[libreCODE++] = atoi(sbol->lexema);
+            }
 			scanner();
 			break;
 		
 		case CCONS_FLO:
 		    tipo = TIPOFLOAT;
+		    if(GEN){
+                CODE[libreCODE++] = CRCT;
+                CODE[libreCODE++] = sizeof(float);
+                CODE[libreCODE++] = atof(sbol->lexema);
+            }
 			scanner();
 			break;
 		
 		case CCONS_CAR:
 		    tipo = TIPOCHAR;
+		    if(GEN){
+		        CODE[libreCODE++] = CRCT;
+		        CODE[libreCODE++] = sizeof(char);
+		        CODE[libreCODE++] = sbol->lexema[0]; //BORRAR VER SI ES DE 0 o 1, PROBAR
+		    }
 			scanner();
 			break;
 		
