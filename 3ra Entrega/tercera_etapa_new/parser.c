@@ -8,14 +8,15 @@ int ARRCHAR = -41, ARRINT = -42, ARRFLOAT = -43, STRING = -14, VARCHAR = -11, VA
  //Los anteriores se implementan en valores negativos para que no conflictuen con valores devueltos por la pila de la tabla de simbolos
 
 float CODE[TAM_PROG];
-int libreCODE = 0;           				// próximo libre del programa
+int libreCODE = 0;
 
 char CAUX[TAM_CTES];
-int libreCAUX = 0; //Si uso strcat esto en 0 o ir agregando pos a pos del tama'o del lexema (si hago esta segunda borrar la inicializacion de arriba)
+int libreCAUX = 0;
 
 char lexema_aux_izq[200]; //Para guardar el lexema del lado izquierdo a un operador por si es lado izquierdo de una asignacion.
 int guarde_variable = 0;
 int desplazamiento = 0;
+int desplazamiento_bloque[TAM_BLOQ];
 
 enum procedimientos {
 	UNIDAD_TRADUCCION, DECLARACIONES, ESPECIFICADOR_TIPO, ESPECIFICADOR_DECLARACION, 
@@ -28,10 +29,11 @@ enum procedimientos {
 
 int main(int argc, char *argv[])
 {
-    char lote[100];
-    strcpy(lote, argv[2]);
-    int length = strlen(lote);
-    lote[length - 1] = 'o';
+    for(int i=0;i<TAM_BLOQ;i++){
+        desplazamiento_bloque[i++] = 0;
+    }
+    CAUX[libreCAUX++] = '\0'; //Porque cuando lo cargo busco a la izquierda hasta el anterior \0
+    GEN = 1;
 
 	init_parser(argc, argv);
 
@@ -52,13 +54,16 @@ int main(int argc, char *argv[])
 	CODE[libreCODE++] = get_nivel();
 
 	unidad_traduccion(CEOF);
-
     if(en_tabla("main") == NIL){ //Control para revisar que se haya creado una funcion main
         error_handler(84); //Falta declarar la funcion main()
     }
-    CODE[libreCODE++] = FINB;
-    CODE[libreCODE++] = get_nivel();
-
+    if(GEN){
+        CODE[libreCODE++] = DMEM;
+        CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
+        desplazamiento_bloque[get_nivel()] = 0;
+        CODE[libreCODE++] = FINB;
+        CODE[libreCODE++] = get_nivel();
+    }
 	pop_nivel();
 
 	//Aqui se podria limpiar lo que queda por la ejecucion del procedimiento inic_tablas()
@@ -67,15 +72,24 @@ int main(int argc, char *argv[])
 
 	last_call=1;
 
-	error_handler(COD_IMP_ERRORES);
+
+	for(int z=0;z<libreCODE;z++){
+	    printf("%f\n",CODE[z]);
+	}
 
 	if(GEN){
+        int length = strlen(argv[2]);
+        argv[2][length - 1] = 'o';
         CODE[libreCODE] = PARAR;
-        guardar_codgen(CODE, CAUX, lote);
-        cargar_codgen(lote);
-        //aca recordar guardar codigo generado, esto era llamar funcion del sistejec
-        //Lo llamo con code, con caux y el argv[2] del main que tiene el nombre del archivo, capaz que tengo que parsear, iterar hasta encontrar el . y ahi reemplazo .c por .o y ahi lo puedo pasar
+        if(guardar_codgen(CODE, CAUX, argv[2])){
+            printf("\nCodigo generado\n");
+        }
+        else{
+            error_handler(8); //El archivo no existe
+        }
     }
+
+	error_handler(COD_IMP_ERRORES);
 
 	return 0;
 }
@@ -185,6 +199,10 @@ void definicion_funcion(set folset,int tipo)
 	match(CPAR_ABR, 20);
 
     pushTB(); //Aumento nivel para insertar correctamente los parametros y variables de la funcion
+    if(GEN){
+        CODE[libreCODE++] = ENBL;
+        CODE[libreCODE++] = get_nivel();
+    }
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		cantidad_parametros = lista_declaraciones_param(folset | CPAR_CIE | first(PROPOSICION_COMPUESTA),posicionTSF);
@@ -342,6 +360,7 @@ void declarador_init(set folset, int tipo)
         inf_id->desc.nivel = get_nivel();
         inf_id->desc.despl = desplazamiento;
         desplazamiento += inf_id->cant_byte;
+        desplazamiento_bloque[get_nivel()] += inf_id->cant_byte;
         if(GEN){
             CODE[libreCODE++] = ALOC;
             CODE[libreCODE++] = inf_id->cant_byte;
@@ -473,6 +492,11 @@ void proposicion_compuesta(set folset,int abrir_bloque)
 
 	if(abrir_bloque==1){ //Por si vengo de proposicion y necesito incrementar el nivel
         pushTB();
+        if(GEN){
+            CODE[libreCODE++] = ENBL;
+            CODE[libreCODE++] = get_nivel();
+        }
+
     }
 
 	match(CLLA_ABR, 24);
@@ -486,6 +510,13 @@ void proposicion_compuesta(set folset,int abrir_bloque)
 		lista_proposiciones(folset | CLLA_CIE);
 
 	match(CLLA_CIE, 25);
+	if(GEN){
+	    CODE[libreCODE++] = DMEM;
+        CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
+        desplazamiento_bloque[get_nivel()] = 0;
+        CODE[libreCODE++] = FINB;
+        CODE[libreCODE++] = get_nivel();
+    }
 	pop_nivel();
 	test(folset,NADA,50);
 }
@@ -658,7 +689,7 @@ void proposicion_e_s(set folset)
                 insertarTS();
             }
 
-			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1,1); //BORRAR ACA PUSE UN 1 PORQUE TENGO QUE ASIGNAR CREO
+			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1,1); //1 por posible asignacion
 			int tam_tipo;
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
@@ -687,7 +718,7 @@ void proposicion_e_s(set folset)
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
 				match(CSHR,30);
-				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1,1); //BORRAR ACA PUSE UN 1 PORQUE TENGO QUE ASIGNAR CREO
+				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1,1); //1 por posible asignacion
                 int tam_tipo;
                 if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
@@ -723,7 +754,7 @@ void proposicion_e_s(set folset)
 
 			match(CSHL, 31);
 			
-			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1,0);
+			tipo = expresion(folset | CSHL | first(EXPRESION) | CPYCOMA,1,0); //0 porque tengo que cargar para imprimir
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
             }
@@ -738,20 +769,49 @@ void proposicion_e_s(set folset)
                 error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
             }
 
-
-            /*Ver donde acomodo*/
-            if(tipo == STRING){
-
+            if(GEN){
+                if(tipo == STRING){
+                    CODE[libreCODE++] = IMPRCS;
+                    int aux = libreCAUX - 2; //2 pq en libreCAUX estoy en pos libre y en libreCAUX - 1 eston en \0
+                    while(CAUX[aux] != '\0'){
+                        aux--;
+                    }
+                    aux ++; //Para quedar apuntando al inicio de la palabra
+                    CODE[libreCODE++] = aux;
+                    //printf("\naux cargado: %d\n", aux);
+                }
+                else if(tipo == TIPOCHAR){
+                    CODE[libreCODE++] = IMPR;
+                    CODE[libreCODE++] = sizeof(char);
+                }
+                else if(tipo == TIPOINT){
+                    CODE[libreCODE++] = IMPR;
+                    CODE[libreCODE++] = sizeof(int);
+                }
+                else if(tipo == TIPOFLOAT){
+                    CODE[libreCODE++] = IMPR;
+                    CODE[libreCODE++] = sizeof(float);
+                }
             }
-
-
 
 			while(lookahead_in(CSHL | first(EXPRESION)))
 			{
 				match(CSHL,31);
 				tipo = expresion(folset | CPYCOMA | CSHL | first(EXPRESION),1,0);
+				if(tipo == VARCHAR){
+                    tipo = TIPOCHAR;
+                }
+                else if(tipo == VARINT){
+                    tipo = TIPOINT;
+                }
+                else if(tipo == VARFLOAT){
+                    tipo = TIPOFLOAT;
+                }
 				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT) && (tipo != STRING)){ //DUDA: Aqui deberia hacer algo mas que marcar el error?
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+                }
+                if(GEN){
+                    //BORRAR COMPLETAR
                 }
 			}
 
@@ -816,7 +876,7 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
                 else if(tipo2 == VARFLOAT){
                     tipo2 = TIPOFLOAT;
                 }
-				if(tipo != tipo2){ ACA VER QUE TENGO QUE HACER CAST JE
+				if(tipo != tipo2){
 				    if(!( //Aceptacion de Coercion
 				        ((tipo == TIPOFLOAT) &&
 				            ((tipo2 == TIPOINT) || (tipo2 == TIPOCHAR)) //Float acepta casteo de Int y Char
@@ -826,6 +886,27 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
                     )){
                         tipo = TIPOERROR;
                         error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
+				    }
+				    else{ //Creacion de este else para hacer el cast aca, para no tocar mucho el resto del codigo
+				        if(tipo == TIPOFLOAT){
+				            if(tipo2 == TIPOINT){
+				                CODE[libreCODE++] = CAST;
+                                CODE[libreCODE++] = sizeof(int);
+                                CODE[libreCODE++] = sizeof(float);
+				            }
+				            else if(tipo2 == TIPOCHAR){
+				                CODE[libreCODE++] = CAST;
+                                CODE[libreCODE++] = sizeof(char);
+                                CODE[libreCODE++] = sizeof(float);
+				            }
+				        }
+				        else if(tipo == TIPOINT){
+				            if(tipo2 == TIPOCHAR){
+				                CODE[libreCODE++] = CAST;
+				                CODE[libreCODE++] = sizeof(char);
+				                CODE[libreCODE++] = sizeof(int);
+				            }
+				        }
 				    }
 				}
 				else{ //Ramificacion else obsoleta ya que se solicita que se accedan a los arreglos mediante un indice (Excepto en invocacion a funcion)
@@ -1188,34 +1269,35 @@ int factor(set folset, int necesito_indice, int posible_asignacion)
 		
 		case CCONS_STR:
 		    tipo = STRING; //Tipo auxiliar para comprobacion en proposicion_e_s en salida
-		    CODE[libreCODE++] = CRCTS;
-		    CODE[libreCODE++] = libreCAUX;
-		    int i=0;
-		    while(sbol->lexema[i] != '\0'){ //Copio el Lexema a la zona strings
-		        if(libreCAUX == TAM_CTES){
-		            error_handler(xxxx);//DAR CODIGO DE ERROR QUE ME PASE
-		        }
-		        CAUX[libreCAUX++] = sbol->lexema[i++];
+		    if(GEN){
+		        CODE[libreCODE++] = CRCTS;
+                CODE[libreCODE++] = libreCAUX;
+                int i=0;
+                while(sbol->lexema[i] != '\0'){ //Copio el Lexema a la zona strings
+                    if(libreCAUX == TAM_CTES){
+                        error_handler(107); //No queda espacio en la zona de strings
+                    }
+                    CAUX[libreCAUX++] = sbol->lexema[i++];
+                }
+                if(libreCAUX == TAM_CTES){
+                    error_handler(107); //No queda espacio en la zona de strings
+                }
+                else{
+                    CAUX[libreCAUX++] = '\0';
+                }
 		    }
-		    if(libreCAUX == TAM_CTES){
-                error_handler(xxxx);//DAR CODIGO DE ERROR QUE ME PASE
-            }
-            else{
-                CAUX[libreCAUX++] = '\0';
-            }
-
 			scanner();
 			break;
 		
 		case CPAR_ABR:
 			match(CPAR_ABR,20);
-			tipo = expresion(folset | CPAR_CIE,1,0); //BORRAR PUSE UN 0 PORQUE NO SE EVALUA POR ACA
+			tipo = expresion(folset | CPAR_CIE,1,0); //BORRAR puse 0 porque me parece que esta expresion no se evalua
 			match(CPAR_CIE, 21);
 			break;
 			
 		case CNEG:
 			scanner();
-			tipo = expresion(folset,1,0); //BORRAR PUSE UN 0 PORQUE NO SE EVALUA POR ACA
+			tipo = expresion(folset,1,0); //BORRAR puse 0 porque me parece que esta expresion no se evalua
 			break;
 			
 		default:
@@ -1518,7 +1600,7 @@ int constante(set folset)
 		    tipo = TIPOINT;
 		    if(GEN){
                 CODE[libreCODE++] = CRCT;
-                CODE[libreCODE++] = sizeof(float);
+                CODE[libreCODE++] = sizeof(int);
                 CODE[libreCODE++] = atoi(sbol->lexema);
             }
 			scanner();

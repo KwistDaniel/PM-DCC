@@ -6,7 +6,8 @@
 # Acceso incorrecto a arreglos #
 
 void main(){
-    int a = 1;
+    int a;
+    cout << a;
 }
 
 # Linea comentario #

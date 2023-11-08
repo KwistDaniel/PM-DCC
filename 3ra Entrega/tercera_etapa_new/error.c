@@ -118,16 +118,18 @@ void error_print(int ne)
 		case 104:printf("\t Error %d: Tipo de la asignación no valido\n", ne); break;
 		case 105:printf("\t Error %d: Los tipos de ambos lados de los operadores lógicos o aritméticos deben ser estructuralmente equivalentes\n", ne); break;
 		case 106:printf("\t Error %d: Los operandos de los operadores lógicos o aritméticos solo pueden ser de tipo char, int o float\n", ne); break;
+		case 107:printf("\t Error %d: No queda espacio en la zona de strings\n", ne); break;
 	}
 }
 
 
 void error_handler(int ne)
 {
-GEN = 0; //Frenar generacion de codigo
+//GEN = 0; //Frenar generacion de codigo
 int i;
 hubo_error++;
 if(last_call){
+    GEN = 0; //Frenar generacion de codigo
 	if(hubo_error==1) printf("Linea %d - %s\n", nro_linea, linea);
 	else {
 	if(strlen(linea)==2) error_print(errores_x_linea[i]);

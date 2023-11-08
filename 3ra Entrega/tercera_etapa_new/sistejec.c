@@ -1,37 +1,37 @@
 /* *********************************************************************
-						S I S T E M A   D E   E J E C U C I Ó N
+						S I S T E M A   D E   E J E C U C I ï¿½ N
 *********************************************************************** */
 
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include "sistejec.h"  			// Definiciones y Constantes del Sistema de Ejecución
+# include "sistejec.h"  			// Definiciones y Constantes del Sistema de Ejecuciï¿½n
 
-int tc = sizeof(char); 				//tamaño del char
-int te = sizeof(int);  				//tamaño del integer
-int tf = sizeof(float); 			//tamaño del float
+int tc = sizeof(char); 				//tamaï¿½o del char
+int te = sizeof(int);  				//tamaï¿½o del integer
+int tf = sizeof(float); 			//tamaï¿½o del float
 
 
-/* ---------------- REGISTRO DE PRÓXIMA INSTRUCCIÓN ------------- */
+/* ---------------- REGISTRO DE PRï¿½XIMA INSTRUCCIï¿½N ------------- */
 
 int rpi;
 
 /* -------------------- ZONA PARA EL PROGRAMA ------------------- */
 
 float P[TAM_PROG];
-int lp = 0;           				// próximo libre del programa
+int lp = 0;           				// prï¿½ximo libre del programa
 
 
 /* ---------------- ZONA PARA LAS CONSTANTES -------------------- */
 
 char C[TAM_CTES];
-int lc = 0;           				// próximo libre de las constantes
+int lc = 0;           				// prï¿½ximo libre de las constantes
 
 /* ---------------- ZONA PARA EL VECTOR DISPLAY ----------------- */
 		
 int D[TAM_DISP];
 
-/* -------------- ZONA PARA EL STACK DE EJECUCIÓN --------------- */
+/* -------------- ZONA PARA EL STACK DE EJECUCIï¿½N --------------- */
 
 char S[TAM_STACK];
 int ls = 0;           				// tope del stack
@@ -54,7 +54,7 @@ int cargar_codgen(char * archivo)				//Toma como entrada el nombre del archivo .
 
 int guardar_codgen(float codigo_programa[], char zona_strings[], char * archivo)	//Toma como entrada las estructuras que se deben guardar en el archivo .o y
 {																					//el nombre del archivo, retorna 0 si hubo un error al abrirlo/crearlo
-	FILE* fp;																		//y sino guarda el código generado seguido de la zona de las ctes strings
+	FILE* fp;																		//y sino guarda el cï¿½digo generado seguido de la zona de las ctes strings
 	if((fp = fopen(archivo, "wb")) == NULL)
 		return 0;
 	else {
@@ -634,7 +634,7 @@ void interprete()
 			exit(1);
 		}
 	}										// del while
-}											// de la función interprete
+}											// de la funciï¿½n interprete
 
 void impr_codgen()
 {

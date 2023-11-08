@@ -16,4 +16,4 @@ token token1;
 
 extern int yylex(void);
 
-int GEN = 1;
+int GEN;
