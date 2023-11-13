@@ -15,7 +15,6 @@ int libreCAUX = 0;
 
 char lexema_aux_izq[200]; //Para guardar el lexema del lado izquierdo a un operador por si es lado izquierdo de una asignacion.
 int guarde_variable = 0;
-int desplazamiento = 0;
 int desplazamiento_bloque[TAM_BLOQ];
 
 enum procedimientos {
@@ -58,9 +57,11 @@ int main(int argc, char *argv[])
         error_handler(84); //Falta declarar la funcion main()
     }
     if(GEN){
-        CODE[libreCODE++] = DMEM;
-        CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
-        desplazamiento_bloque[get_nivel()] = 0;
+        if(desplazamiento_bloque[get_nivel()] != 0){
+            CODE[libreCODE++] = DMEM;
+            CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
+            desplazamiento_bloque[get_nivel()] = 0;
+        }
         CODE[libreCODE++] = FINB;
         CODE[libreCODE++] = get_nivel();
     }
@@ -71,11 +72,6 @@ int main(int argc, char *argv[])
 	match(CEOF, 9);
 
 	last_call=1;
-
-
-	for(int z=0;z<libreCODE;z++){
-	    printf("%f\n",CODE[z]);
-	}
 
 	if(GEN){
         int length = strlen(argv[2]);
@@ -358,8 +354,7 @@ void declarador_init(set folset, int tipo)
             inf_id->cant_byte = sizeof(float);
         }
         inf_id->desc.nivel = get_nivel();
-        inf_id->desc.despl = desplazamiento;
-        desplazamiento += inf_id->cant_byte;
+        inf_id->desc.despl = desplazamiento_bloque[get_nivel()];
         desplazamiento_bloque[get_nivel()] += inf_id->cant_byte;
         if(GEN){
             CODE[libreCODE++] = ALOC;
@@ -379,11 +374,18 @@ void declarador_init(set folset, int tipo)
                 error_handler(83); //Los tipos de ambos lados de la asignacion deben ser estructuralmente equivalentes
             }
 			inf_id->ptr_tipo = tipo;
+			int aux = 0;
+			if (tipo == TIPOINT){
+                aux = 1;
+            }
+            else if(tipo == TIPOFLOAT){
+                aux = 2;
+            }
 			if(GEN){
 			    CODE[libreCODE++] = ALM;
                 CODE[libreCODE++] = inf_id->desc.nivel;
                 CODE[libreCODE++] = inf_id->desc.despl;
-                CODE[libreCODE++] = inf_id->cant_byte;
+                CODE[libreCODE++] = aux;
 			}
 			break;
         case CLLA_ABR:
@@ -511,10 +513,12 @@ void proposicion_compuesta(set folset,int abrir_bloque)
 
 	match(CLLA_CIE, 25);
 	if(GEN){
-	    CODE[libreCODE++] = DMEM;
-        CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
-        desplazamiento_bloque[get_nivel()] = 0;
-        CODE[libreCODE++] = FINB;
+	    if(desplazamiento_bloque[get_nivel()] != 0){
+	        CODE[libreCODE++] = DMEM;
+            CODE[libreCODE++] = desplazamiento_bloque[get_nivel()];
+            desplazamiento_bloque[get_nivel()] = 0;
+	    }
+	    CODE[libreCODE++] = FINB;
         CODE[libreCODE++] = get_nivel();
     }
 	pop_nivel();
@@ -693,27 +697,33 @@ void proposicion_e_s(set folset)
 			int tam_tipo;
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
-                tam_tipo = sizeof(char);
+                tam_tipo = 0;
             }
             else if(tipo == VARINT){
                 tipo = TIPOINT;
-                tam_tipo = sizeof(int);
+                tam_tipo = 1;
             }
             else if(tipo == VARFLOAT){
                 tipo = TIPOFLOAT;
-                tam_tipo = sizeof(float);
+                tam_tipo = 2;
             }
-
 			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
 			    error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
 			}
+			int aux = 0;
+            if (tipo == TIPOINT){
+                aux = 1;
+            }
+            else if(tipo == TIPOFLOAT){
+                aux = 2;
+            }
 			if(GEN){
 			    CODE[libreCODE++] = LEER;
 			    CODE[libreCODE++] = tam_tipo;
 			    CODE[libreCODE++] = ALM;
 			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
 			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
-			    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+			    CODE[libreCODE++] = aux;
 			}
 			while(lookahead_in(CSHR | first(VARIABLE)))
 			{
@@ -722,18 +732,25 @@ void proposicion_e_s(set folset)
                 int tam_tipo;
                 if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
-                    tam_tipo = sizeof(char);
+                    tam_tipo = 0;
                 }
                 else if(tipo == VARINT){
                     tipo = TIPOINT;
-                    tam_tipo = sizeof(int);
+                    tam_tipo = 1;
                 }
                 else if(tipo == VARFLOAT){
                     tipo = TIPOFLOAT;
-                    tam_tipo = sizeof(float);
+                    tam_tipo = 2;
                 }
 				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
+                }
+                int aux = 0;
+                if (tipo == TIPOINT){
+                    aux = 1;
+                }
+                else if(tipo == TIPOFLOAT){
+                    aux = 2;
                 }
                 if(GEN){
                     CODE[libreCODE++] = LEER;
@@ -741,7 +758,7 @@ void proposicion_e_s(set folset)
                     CODE[libreCODE++] = ALM;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
-                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                    CODE[libreCODE++] = aux;
                 }
 			}
 
@@ -782,15 +799,15 @@ void proposicion_e_s(set folset)
                 }
                 else if(tipo == TIPOCHAR){
                     CODE[libreCODE++] = IMPR;
-                    CODE[libreCODE++] = sizeof(char);
+                    CODE[libreCODE++] = 0;
                 }
                 else if(tipo == TIPOINT){
                     CODE[libreCODE++] = IMPR;
-                    CODE[libreCODE++] = sizeof(int);
+                    CODE[libreCODE++] = 1;
                 }
                 else if(tipo == TIPOFLOAT){
                     CODE[libreCODE++] = IMPR;
-                    CODE[libreCODE++] = sizeof(float);
+                    CODE[libreCODE++] = 2;
                 }
             }
 
@@ -891,20 +908,20 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 				        if(tipo == TIPOFLOAT){
 				            if(tipo2 == TIPOINT){
 				                CODE[libreCODE++] = CAST;
-                                CODE[libreCODE++] = sizeof(int);
-                                CODE[libreCODE++] = sizeof(float);
+                                CODE[libreCODE++] = 1;
+                                CODE[libreCODE++] = 2;
 				            }
 				            else if(tipo2 == TIPOCHAR){
 				                CODE[libreCODE++] = CAST;
-                                CODE[libreCODE++] = sizeof(char);
-                                CODE[libreCODE++] = sizeof(float);
+                                CODE[libreCODE++] = 0;
+                                CODE[libreCODE++] = 2;
 				            }
 				        }
 				        else if(tipo == TIPOINT){
 				            if(tipo2 == TIPOCHAR){
 				                CODE[libreCODE++] = CAST;
-				                CODE[libreCODE++] = sizeof(char);
-				                CODE[libreCODE++] = sizeof(int);
+				                CODE[libreCODE++] = 0;
+				                CODE[libreCODE++] = 1;
 				            }
 				        }
 				    }
@@ -922,11 +939,18 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 				        }
 				    }
 				}
+				int aux = 0;
+                if (tipo == TIPOINT){
+                    aux = 1;
+                }
+                else if(tipo == TIPOFLOAT){
+                    aux = 2;
+                }
 				if(GEN){
 				    CODE[libreCODE++] = ALM;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
-                    CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                    CODE[libreCODE++] = aux;
                     cargue_izquierdo = 1;
 				}
 				strcpy(lexema_aux_izq,"");
@@ -941,20 +965,24 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 			case CMAIG:
 			    if(guarde_variable == 1){
 			        if(GEN){
+			            int aux = 0;
 			            int tam_tipo;
 			            if(tipo == TIPOCHAR){
-			                tam_tipo = sizeof(char);
+			                aux = 0;
+			                tam_tipo = 0;
 			            }
 			            else if(tipo == TIPOINT){
-			                tam_tipo = sizeof(int);
+			                aux = 1;
+			                tam_tipo = 1;
 			            }
 			            else if(tipo == TIPOFLOAT){
-			                tam_tipo = sizeof(float);
+			                aux = 2;
+			                tam_tipo = 2;
 			            }
                         CODE[libreCODE++] = CRVL;
                         CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
                         CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
-                        CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                        CODE[libreCODE++] = aux;
                         cargue_izquierdo = 1;
                     }
                     strcpy(lexema_aux_izq,"");
@@ -1013,16 +1041,20 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
                         error_handler(96); //Los operandos de los operadores logicos o relacionales solo pueden ser de tipo char, int o float
                     }
                 }
+                int aux2 = 0;
                 if(GEN){
                     int tam_tipo;
                     if(tipo2 == TIPOCHAR){
-                        tam_tipo = sizeof(char);
+                        aux2 = 0;
+                        tam_tipo = 0;
                     }
                     else if(tipo2 == TIPOINT){
-                        tam_tipo = sizeof(int);
+                        aux2 = 1;
+                        tam_tipo = 1;
                     }
                     else if(tipo2 == TIPOFLOAT){
-                        tam_tipo = sizeof(float);
+                        aux2 = 2;
+                        tam_tipo = 2;
                     }
                      switch(operador){ //Cargo el operador guardado
                         case 1: //DISTINTO
@@ -1055,10 +1087,20 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 		}
 		if (cargue_izquierdo == 0){
 		    if(GEN){
+		        int tipo = Tipo_Ident(lexema_aux_izq), aux = 0;
+		        if(tipo == TIPOCHAR){
+		            aux = 0;
+		        }
+		        else if(tipo == TIPOINT){
+		            aux = 1;
+		        }
+		        else if(tipo == TIPOFLOAT){
+		            aux = 2;
+		        }
                 CODE[libreCODE++] = CRVL;
                 CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
                 CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
-                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->cant_byte;
+                CODE[libreCODE++] = aux;
 		    }
 		    strcpy(lexema_aux_izq,"");
             guarde_variable = 0;
@@ -1126,13 +1168,13 @@ int expresion_simple(set folset, int necesito_indice, int posible_asignacion)
         if(GEN){
             int tam_tipo;
             if(tipo2 == TIPOCHAR){
-                tam_tipo = sizeof(char);
+                tam_tipo = 0;
             }
             else if(tipo2 == TIPOINT){
-                tam_tipo = sizeof(int);
+                tam_tipo = 1;
             }
             else if(tipo2 == TIPOFLOAT){
-                tam_tipo = sizeof(float);
+                tam_tipo = 2;
             }
             switch(operador){ //Cargo el operador guardado
                 case 1:
@@ -1207,13 +1249,13 @@ int termino(set folset, int necesito_indice, int posible_asignacion)
         if(GEN){
             int tam_tipo;
             if(tipo2 == TIPOCHAR){
-                tam_tipo = sizeof(char);
+                tam_tipo = 0;
             }
             else if(tipo2 == TIPOINT){
-                tam_tipo = sizeof(int);
+                tam_tipo = 1;
             }
             else if(tipo2 == TIPOFLOAT){
-                tam_tipo = sizeof(float);
+                tam_tipo = 2;
             }
             switch(operador){ //Cargo el operador guardado
                 case 1:
@@ -1383,11 +1425,21 @@ int variable(set folset, int necesito_indice, int posible_asignacion)
 	            guarde_variable = 1;
 	        }
 	        else{
+	            int aux = 0;
+                if(tipo == TIPOCHAR){
+                    aux = 0;
+                }
+                else if(tipo == TIPOINT){
+                    aux = 1;
+                }
+                else if(tipo == TIPOFLOAT){
+                    aux = 2;
+                }
 	            if(GEN){
 	                CODE[libreCODE++] = CRVL;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.nivel;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.despl;
-                    CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->cant_byte;
+                    CODE[libreCODE++] = aux;
 	            }
 	        }
 	        if(tipo == TIPOCHAR){
@@ -1600,7 +1652,7 @@ int constante(set folset)
 		    tipo = TIPOINT;
 		    if(GEN){
                 CODE[libreCODE++] = CRCT;
-                CODE[libreCODE++] = sizeof(int);
+                CODE[libreCODE++] = 1;
                 CODE[libreCODE++] = atoi(sbol->lexema);
             }
 			scanner();
@@ -1610,7 +1662,7 @@ int constante(set folset)
 		    tipo = TIPOFLOAT;
 		    if(GEN){
                 CODE[libreCODE++] = CRCT;
-                CODE[libreCODE++] = sizeof(float);
+                CODE[libreCODE++] = 2;
                 CODE[libreCODE++] = atof(sbol->lexema);
             }
 			scanner();
@@ -1620,7 +1672,7 @@ int constante(set folset)
 		    tipo = TIPOCHAR;
 		    if(GEN){
 		        CODE[libreCODE++] = CRCT;
-		        CODE[libreCODE++] = sizeof(char);
+		        CODE[libreCODE++] = 0;
 		        CODE[libreCODE++] = sbol->lexema[0]; //BORRAR VER SI ES DE 0 o 1, PROBAR
 		    }
 			scanner();
