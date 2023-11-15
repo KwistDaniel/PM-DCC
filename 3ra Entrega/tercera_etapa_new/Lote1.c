@@ -1,13 +1,14 @@
-# Parte 2 #
-# Errores: #
-# Definicion de variables simples y arreglos tipo void #
-# Definicion e inicializacion incorrecta de arreglos #
-# Asignaciones incorrectas #
-# Acceso incorrecto a arreglos #
+# Generacion de codigo #
+
 
 void main(){
-    int a;
-    cout << a;
+    int a = 1;
+    if(a == 2){
+        a = 3;
+    }
+    else{
+        a = 5;
+    }
 }
 
 # Linea comentario #

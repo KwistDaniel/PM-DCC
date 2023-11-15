@@ -85,6 +85,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    /**Impresion codigos**/
+    /*printf("\n\n");
+    printf("Impresion codigos: \n");
+    for(int i = 0; i < libreCODE; i++){
+        printf("%f\n", CODE[i]);
+    }
+    printf("\n");*/
+
 	error_handler(COD_IMP_ERRORES);
 
 	return 0;
@@ -664,13 +672,43 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_CIE, 21);
 
+	int tam_tipo = 0;
+    if(tipo == TIPOCHAR){
+        tam_tipo = 0;
+    }
+    else if(tipo == TIPOINT){
+        tam_tipo = 1;
+    }
+    else if(tipo == TIPOFLOAT){
+        tam_tipo = 2;
+    }
+
+    int saltoBIFF, saltoBIFS;
+	if(GEN){
+	    CODE[libreCODE++] = BIFF;
+	    CODE[libreCODE++] = tam_tipo;
+	}
+	saltoBIFF = libreCODE++;
+
 	proposicion(folset | CELSE | first(PROPOSICION));
+
+    if(GEN){
+        CODE[libreCODE++] = BIFS;
+    }
+    saltoBIFS = libreCODE++;
+
+    if(GEN){
+        CODE[saltoBIFF] = libreCODE - saltoBIFF;
+    }
 
 	if(lookahead_in(CELSE))
 	{
 		scanner();
 		proposicion(folset);
 	}
+	if(GEN){
+        CODE[saltoBIFS] = libreCODE - saltoBIFS;
+    }
 }
 
 
@@ -694,17 +732,23 @@ void proposicion_e_s(set folset)
             }
 
 			tipo = variable(folset | CSHR | first(VARIABLE) | CPYCOMA,1,1); //1 por posible asignacion
-			int tam_tipo;
 			if(tipo == VARCHAR){
                 tipo = TIPOCHAR;
-                tam_tipo = 0;
             }
             else if(tipo == VARINT){
                 tipo = TIPOINT;
-                tam_tipo = 1;
             }
             else if(tipo == VARFLOAT){
                 tipo = TIPOFLOAT;
+            }
+            int tam_tipo;
+            if(tipo == TIPOCHAR){
+                tam_tipo = 0;
+            }
+            else if(tipo == TIPOINT){
+                tam_tipo = 1;
+            }
+            else if(tipo == TIPOFLOAT){
                 tam_tipo = 2;
             }
 			if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
@@ -729,17 +773,23 @@ void proposicion_e_s(set folset)
 			{
 				match(CSHR,30);
 				tipo = variable(folset | CPYCOMA | CSHR | first(VARIABLE),1,1); //1 por posible asignacion
-                int tam_tipo;
                 if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
-                    tam_tipo = 0;
                 }
                 else if(tipo == VARINT){
                     tipo = TIPOINT;
-                    tam_tipo = 1;
                 }
                 else if(tipo == VARFLOAT){
                     tipo = TIPOFLOAT;
+                }
+                int tam_tipo;
+                if(tipo == TIPOCHAR){
+                    tam_tipo = 0;
+                }
+                else if(tipo == TIPOINT){
+                    tam_tipo = 1;
+                }
+                else if(tipo == TIPOFLOAT){
                     tam_tipo = 2;
                 }
 				if((tipo != TIPOCHAR) && (tipo != TIPOINT) && (tipo != TIPOFLOAT)){
