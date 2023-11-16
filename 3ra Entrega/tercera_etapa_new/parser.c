@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     for(int i=0;i<TAM_BLOQ;i++){
         desplazamiento_bloque[i++] = 0;
     }
-    CAUX[libreCAUX++] = '\0'; //Porque cuando lo cargo busco a la izquierda hasta el anterior \0
+    //CAUX[libreCAUX++] = '\0'; //Porque cuando lo cargo busco a la izquierda hasta el anterior \0
     GEN = 1;
 
 	init_parser(argc, argv);
@@ -839,12 +839,15 @@ void proposicion_e_s(set folset)
             if(GEN){
                 if(tipo == STRING){
                     CODE[libreCODE++] = IMPRCS;
-                    int aux = libreCAUX - 2; //2 pq en libreCAUX estoy en pos libre y en libreCAUX - 1 eston en \0
+                    /*int aux = libreCAUX - 2; //2 pq en libreCAUX estoy en pos libre y en libreCAUX - 1 eston en \0
                     while(CAUX[aux] != '\0'){
                         aux--;
+                        if(aux < 0){
+                            break;
+                        }
                     }
                     aux ++; //Para quedar apuntando al inicio de la palabra
-                    CODE[libreCODE++] = aux;
+                    CODE[libreCODE++] = aux;*/
                     //printf("\naux cargado: %d\n", aux);
                 }
                 else if(tipo == TIPOCHAR){
@@ -1060,6 +1063,30 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
                         break;
                 }
 				scanner();
+				//ACA DEBERIA PONER EL OPERADOR CREO
+/*
+				if(GEN){
+                		        int tipo = Tipo_Ident(lexema_aux_izq), aux = 0;
+                		        if(tipo == TIPOCHAR){
+                		            aux = 0;
+                		        }
+                		        else if(tipo == TIPOINT){
+                		            aux = 1;
+                		        }
+                		        else if(tipo == TIPOFLOAT){
+                		            aux = 2;
+                		        }
+
+                                CODE[libreCODE++] = CRVL;
+                                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
+                                CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
+                                CODE[libreCODE++] = aux;
+                		    }
+                		    strcpy(lexema_aux_izq,"");
+                		    guarde_variable = 0;
+                		    cargue_izquierdo = 1;
+
+*/
 				tipo2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG, 1,0);
 				if(tipo == VARCHAR){
                     tipo = TIPOCHAR;
@@ -1135,7 +1162,7 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
                 }
                 break;
 		}
-		if (cargue_izquierdo == 0){
+		/*if (cargue_izquierdo == 0){
 		    if(GEN){
 		        int tipo = Tipo_Ident(lexema_aux_izq), aux = 0;
 		        if(tipo == TIPOCHAR){
@@ -1147,6 +1174,9 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 		        else if(tipo == TIPOFLOAT){
 		            aux = 2;
 		        }
+		        printf("CRVL 2: %d\n", ts[en_tabla(lexema_aux_izq)].ets->desc.nivel);
+		        printf("CRVL 2: %d\n", ts[en_tabla(lexema_aux_izq)].ets->desc.despl);
+		        printf("CRVL 2: %d\n", aux);
                 CODE[libreCODE++] = CRVL;
                 CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.nivel;
                 CODE[libreCODE++] = ts[en_tabla(lexema_aux_izq)].ets->desc.despl;
@@ -1154,7 +1184,7 @@ int expresion(set folset, int necesito_indice, int posible_asignacion)
 		    }
 		    strcpy(lexema_aux_izq,"");
             guarde_variable = 0;
-		}
+		}*/
 	}
 	return tipo;
 }
@@ -1376,8 +1406,9 @@ int factor(set folset, int necesito_indice, int posible_asignacion)
                 }
                 else{
                     CAUX[libreCAUX++] = '\0';
+                    //CAUX[libreCAUX++] = sbol->lexema[i++];
                 }
-		    }
+            }
 			scanner();
 			break;
 		
@@ -1404,6 +1435,7 @@ int factor(set folset, int necesito_indice, int posible_asignacion)
 int variable(set folset, int necesito_indice, int posible_asignacion)
 {
 	test(first(VARIABLE),folset | CCOR_ABR,59);
+	int lo_cargue = 0;
 	char lexema_aux[200];
 	strcpy(lexema_aux,sbol->lexema);
 	int tipo = Tipo_Ident(sbol->lexema), flag = 0;
@@ -1490,6 +1522,7 @@ int variable(set folset, int necesito_indice, int posible_asignacion)
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.nivel;
                     CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.despl;
                     CODE[libreCODE++] = aux;
+                    lo_cargue = 1;
 	            }
 	        }
 	        if(tipo == TIPOCHAR){
@@ -1502,6 +1535,26 @@ int variable(set folset, int necesito_indice, int posible_asignacion)
                 tipo = VARFLOAT;
             }
 	    }
+	}
+	if(lo_cargue == 0){
+	    if(posible_asignacion == 0){
+	        int aux = 0;
+            if(tipo == TIPOCHAR){
+                aux = 0;
+            }
+            else if(tipo == TIPOINT){
+                aux = 1;
+            }
+            else if(tipo == TIPOFLOAT){
+                aux = 2;
+            }
+            if(GEN){
+                CODE[libreCODE++] = CRVL;
+                CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.nivel;
+                CODE[libreCODE++] = ts[en_tabla(lexema_aux)].ets->desc.despl;
+                CODE[libreCODE++] = aux;
+            }
+        }
 	}
 	test(folset,NADA,60);
 	return tipo;
