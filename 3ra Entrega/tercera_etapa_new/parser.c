@@ -881,7 +881,31 @@ void proposicion_e_s(set folset)
                     error_handler(95); //Las proposiciones de E/S solo aceptan variables y/o expresiones de tipo char, int y float
                 }
                 if(GEN){
-                    //BORRAR COMPLETAR
+                    if(tipo == STRING){
+                        CODE[libreCODE++] = IMPRCS;
+                        /*int aux = libreCAUX - 2; //2 pq en libreCAUX estoy en pos libre y en libreCAUX - 1 eston en \0
+                        while(CAUX[aux] != '\0'){
+                            aux--;
+                            if(aux < 0){
+                                break;
+                            }
+                        }
+                        aux ++; //Para quedar apuntando al inicio de la palabra
+                        CODE[libreCODE++] = aux;*/
+                        //printf("\naux cargado: %d\n", aux);
+                    }
+                    else if(tipo == TIPOCHAR){
+                        CODE[libreCODE++] = IMPR;
+                        CODE[libreCODE++] = 0;
+                    }
+                    else if(tipo == TIPOINT){
+                        CODE[libreCODE++] = IMPR;
+                        CODE[libreCODE++] = 1;
+                    }
+                    else if(tipo == TIPOFLOAT){
+                        CODE[libreCODE++] = IMPR;
+                        CODE[libreCODE++] = 2;
+                    }
                 }
 			}
 
